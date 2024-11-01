@@ -1,0 +1,8 @@
+django~=5.1.2
+djangorestframework
+requests
+django-cors-headers
+pypdf2
+google-generativeai
+django-environ
+Pillow
