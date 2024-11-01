@@ -8,4 +8,4 @@ class ContactInquiry(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.name
+        return self.email + " - " + self.message[:20]
