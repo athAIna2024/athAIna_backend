@@ -1,4 +1,6 @@
 from django.urls import path
-from . import views
+from contactinquiryapp.views import ContactInquiryCreate
 
-urlpatterns = []
+urlpatterns = [
+    path('', ContactInquiryCreate.as_view(), name='contact_inquiry'),
+]
