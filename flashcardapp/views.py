@@ -7,7 +7,6 @@ from .models import Flashcard, PDF
 from .paginators import StandardPaginationFlashcards, ReviewModePaginationFlashcard
 from .serializers import FlashcardSerializer
 
-# Create your views here.
 class CreateFlashcard(generics.CreateAPIView):
     queryset = Flashcard.objects.all()
     serializer_class = FlashcardSerializer
@@ -16,8 +15,8 @@ class CreateFlashcard(generics.CreateAPIView):
         question = serializer.validated_data.get('question')
         answer = serializer.validated_data.get('answer')
         image = serializer.validated_data.get('image')
-        studyset_id = serializer.validated_data.get('studyset_id')
-        serializer.save(question=question, answer=answer, image=image, studyset_id=studyset_id)
+        studyset_instance = serializer.validated_data.get('studyset_instance')
+        serializer.save(question=question, answer=answer, image=image, studyset_instance=studyset_instance)
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -33,7 +32,27 @@ class CreateFlashcard(generics.CreateAPIView):
                 'errors': serializer.errors
             }, status=HTTP_400_BAD_REQUEST)
 
+class ListOfFlashcards(generics.ListAPIView):
+    queryset = Flashcard.objects.all().order_by('created_at')
+    serializer_class = FlashcardSerializer
 
+    try:
+        queryset = Flashcard.objects.all()
+    except Flashcard.DoesNotExist:
+        raise Http404("No Flashcards found")
+
+    def get(self, request, *args, **kwargs):
+        flashcards = self.get_queryset()
+        page = self.paginate_queryset(flashcards)
+        serializer = self.get_serializer(page, many=True)
+
+        if not serializer.data:
+            return Response({
+                'message': 'No flashcards found.',
+                'data': serializer.data
+            }, status=HTTP_200_OK)
+        else:
+            return self.get_paginated_response(serializer.data)
 class LibraryOfFlashcards(generics.ListAPIView):
     queryset = Flashcard.objects.all().order_by('created_at')
     serializer_class = FlashcardSerializer
@@ -90,12 +109,16 @@ class UpdateFlashcard(generics.RetrieveUpdateAPIView):
             return super().get_object()
         except Http404:
             raise NotFound({"detail": "No Flashcard found with ID {0}".format(self.kwargs.get('id'))})
+
     def perform_update(self, serializer):
         question = serializer.validated_data.get('question')
         answer = serializer.validated_data.get('answer')
-        image = serializer.validated_data.get('image')
-        studyset_id = serializer.validated_data.get('studyset_id')
-        serializer.save(question=question, answer=answer, image=image, studyset_id=studyset_id)
+        if 'image' in serializer.validated_data: # If image is being updated
+            image = serializer.validated_data.get('image')
+        else:
+            image = self.get_object().image
+        studyset_instance = serializer.validated_data.get('studyset_instance')
+        serializer.save(question=question, answer=answer, image=image, studyset_instance=studyset_instance)
 
     def put(self, request, *args, **kwargs):
         flashcard = self.get_object()
