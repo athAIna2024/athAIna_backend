@@ -4,6 +4,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework import generics
 from .models import Flashcard, PDF
+from .paginators import StandardPaginationFlashcards, ReviewModePaginationFlashcard
 from .serializers import FlashcardSerializer
 
 # Create your views here.
@@ -32,9 +33,11 @@ class CreateFlashcard(generics.CreateAPIView):
                 'errors': serializer.errors
             }, status=HTTP_400_BAD_REQUEST)
 
-class ListFlashcard(generics.ListAPIView):
+
+class LibraryOfFlashcards(generics.ListAPIView):
     queryset = Flashcard.objects.all().order_by('created_at')
     serializer_class = FlashcardSerializer
+    pagination_class = StandardPaginationFlashcards
 
     try:
         queryset = Flashcard.objects.all()
@@ -43,7 +46,8 @@ class ListFlashcard(generics.ListAPIView):
 
     def get(self, request, *args, **kwargs):
         flashcards = self.get_queryset()
-        serializer = self.get_serializer(flashcards, many=True)
+        page = self.paginate_queryset(flashcards)
+        serializer = self.get_serializer(page, many=True)
 
         if not serializer.data:
             return Response({
@@ -51,10 +55,30 @@ class ListFlashcard(generics.ListAPIView):
                 'data': serializer.data
             }, status=HTTP_200_OK)
         else:
+            return self.get_paginated_response(serializer.data)
+
+class ReviewModeFlashcard(generics.ListAPIView):
+    queryset = Flashcard.objects.all().order_by('created_at')
+    serializer_class = FlashcardSerializer
+    pagination_class = ReviewModePaginationFlashcard
+
+    try:
+        queryset = Flashcard.objects.all()
+    except Flashcard.DoesNotExist:
+        raise Http404("No Flashcards found")
+
+    def get(self, request, *args, **kwargs):
+        flashcards = self.get_queryset()
+        page = self.paginate_queryset(flashcards)
+        serializer = self.get_serializer(page, many=True)
+
+        if not serializer.data:
             return Response({
-                'message': 'Flashcards retrieved successfully.',
+                'message': 'No flashcards found.',
                 'data': serializer.data
             }, status=HTTP_200_OK)
+        else:
+            return self.get_paginated_response(serializer.data)
 
 class UpdateFlashcard(generics.RetrieveUpdateAPIView):
     queryset = Flashcard.objects.all()
