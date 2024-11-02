@@ -7,9 +7,9 @@ class ContactInquirySerializer(serializers.ModelSerializer):
         required=True,
         allow_blank=False,
         error_messages={
-            'required': 'Please provide your name.',
-            'max_length': 'Name must be less than 100 characters.',
-            'blank': 'Please provide your name.'
+            'required': 'Your name is needed so we know who to address.',
+            'max_length': 'You can use your full name, but it must be less than 100 characters.',
+            'blank': 'Your name is needed so we know who to address.'
         }
     )
 
@@ -17,9 +17,9 @@ class ContactInquirySerializer(serializers.ModelSerializer):
         required=True,
         allow_blank=False,
         error_messages={
-            'required': 'Please provide your email address.',
+            'required': 'Your email address is needed so we can respond to your inquiry.',
             'invalid': 'Please provide a valid email address.',
-            'blank': 'Please provide your email address.'
+            'blank': 'Your email address is needed so we can respond to your inquiry.'
         }
     )
 
@@ -28,9 +28,9 @@ class ContactInquirySerializer(serializers.ModelSerializer):
         required=True,
         allow_blank=False,
         error_messages={
-            'required': 'Please provide a message.',
+            'required': 'Your message is needed so we know how to help you.',
             'max_length': 'Message must be less than 300 characters.',
-            'blank': 'Please provide a message.'
+            'blank': 'Your message is needed so we know how to help you.'
         }
     )
 
