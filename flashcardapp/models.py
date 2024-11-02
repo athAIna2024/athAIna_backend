@@ -7,7 +7,7 @@ class Flashcard(models.Model):
     image = models.ImageField(upload_to='flashcard_images/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    studyset_id = models.ForeignKey('studysetapp.StudySet', on_delete=models.CASCADE, related_name='flashcards')
+    studyset_instance = models.ForeignKey('studysetapp.StudySet', on_delete=models.CASCADE, related_name='flashcards')
 
     def __str__(self):
         return self.question
