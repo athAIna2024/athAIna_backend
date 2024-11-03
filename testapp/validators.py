@@ -1,1 +1,10 @@
-# Ensure that the learner choose an appropriate number of questions that is less than or equal to the total number of flashcards in the study set. If the learner chooses a number of questions that is greater than the total number of flashcards in the study set, the learner should receive an error message that says "The number of flashcards you have chosen is greater than the total number of flashcards in the study set. Please choose a number of flashcards that is less than or equal to the total number of flashcards in the study set."
+from flashcardapp.models import Flashcard
+
+def validate_number_of_flashcards(num_of_flashcards, studyset_instance):
+    total_flashcards = Flashcard.objects.filter(studyset_instance=studyset_instance).count()
+    if num_of_flashcards < total_flashcards:
+        return num_of_flashcards
+    if num_of_flashcards > total_flashcards:
+        return total_flashcards
+    if num_of_flashcards <= 0 and total_flashcards >= 10:
+        return 10
