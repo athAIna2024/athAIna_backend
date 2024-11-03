@@ -2,6 +2,7 @@ from rest_framework import serializers
 from flashcardapp.models import Flashcard
 from reportapp.models import TestResult
 from studysetapp.models import StudySet
+from .validators import validate_number_of_flashcards
 
 
 class TestModeFlashcardSerializer(serializers.ModelSerializer): # under library page of flashcards
@@ -11,6 +12,22 @@ class TestModeFlashcardSerializer(serializers.ModelSerializer): # under library 
         fields = ['question', 'answer', 'image', 'studyset_instance']
         read_only_fields = ['question', 'answer', 'image', 'studyset_instance']
 
+class GenerateRandomFlashcardSerializer(serializers.Serializer):
+
+    studyset_instance = serializers.PrimaryKeyRelatedField(
+        queryset=StudySet.objects.all(),
+        required=True,
+        error_messages={
+            'required': 'Please choose a study set',
+        }
+    )
+
+    number_of_flashcards = serializers.IntegerField(
+        required=True,
+        error_messages={
+            'required': 'Please enter the number of flashcards',
+        }
+    )
 
 class TestModeFlashcardSerializerForEmptyReport(serializers.ModelSerializer): # under report page
 
