@@ -1,11 +1,15 @@
 # testapp/views.py
-from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_201_CREATED
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_404_NOT_FOUND
 from rest_framework.response import Response
 from rest_framework import generics
 import random
 import uuid
 from flashcardapp.models import Flashcard
-from .serializers import GenerateRandomFlashcardSerializer, GeneratedTestSerializer
+from .serializers import GenerateRandomFlashcardSerializer, LearnerAnswerSerializer
+from rest_framework import generics, mixins
+from .models import GeneratedTest
+from .serializers import GeneratedTestSerializer
+from .paginators import SingleQuestionPagination
 
 class GenerateRandomFlashcards(generics.GenericAPIView):
     serializer_class = GenerateRandomFlashcardSerializer
@@ -20,6 +24,7 @@ class GenerateRandomFlashcards(generics.GenericAPIView):
             generated_tests = self.save_generated_tests(studyset_instance, flashcards, batch_id)
             return Response({
                 'message': 'Generated tests created successfully.',
+                'batch_id': batch_id,
                 'generated_tests': GeneratedTestSerializer(generated_tests, many=True).data
             }, status=HTTP_201_CREATED)
         else:
@@ -46,5 +51,32 @@ class GenerateRandomFlashcards(generics.GenericAPIView):
                 generated_test = serializer.save()
                 generated_tests.append(generated_test)
             else:
-                raise ValueError(f"Invalid data: {serializer.errors}")
+                return Response({
+                    'message': 'Test mode flashcards could not be generated, please try again.',
+                    'errors': serializer.errors
+                }, status=HTTP_400_BAD_REQUEST)
         return generated_tests
+
+class PresentFlashCardView(generics.GenericAPIView):
+    serializer_class = LearnerAnswerSerializer
+    pagination_class = SingleQuestionPagination
+
+    def get_queryset(self):
+        generated_tests = GeneratedTest.objects.filter(batch_id=self.kwargs.get('batch_id'))
+        return generated_tests
+
+    def get(self, request, *args, **kwargs):
+        generated_tests = self.get_queryset()
+        page = self.paginate_queryset(generated_tests)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(generated_tests, many=True)
+        return Response(serializer.data, status=HTTP_200_OK)
+
+    def validate_learner_answer(self, flashcard_id, studyset_instance, learner_answer):
+        flashcard = Flashcard.objects.get(id=flashcard_id, studyset_instance=studyset_instance)
+        return flashcard.answer in learner_answer
+    def put(self, request, *args, **kwargs):
+        pass
+

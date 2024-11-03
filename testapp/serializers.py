@@ -9,21 +9,31 @@ class GeneratedTestSerializer(serializers.ModelSerializer):
     class Meta:
         model = GeneratedTest
         fields = '__all__'
-
-    learner_answer = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        max_length=100,
-        error_messages={
-            'max_length': 'Please keep your answer under 100 characters.',
-        }
-    )
+        read_only_fields = ['learner_answer', 'correct']
 
     def create(self, validated_data):
         batch_id = self.context.get('batch_id')
         if batch_id:
             validated_data['batch_id'] = batch_id
         return GeneratedTest.objects.create(**validated_data)
+
+class LearnerAnswerSerializer(serializers.ModelSerializer):
+    question = serializers.CharField(source='flashcard_instance.question', read_only=True)
+    answer = serializers.CharField(source='flashcard_instance.answer', read_only=True)
+
+    class Meta:
+        model = GeneratedTest
+        fields = '__all__'
+        read_only_fields = ['studyset_instance', 'flashcard_instance', 'question', 'answer']
+
+    def update(self, instance, validated_data):
+        instance.learner_answer = validated_data.get('learner_answer', instance.learner_answer)
+        instance.correct = validated_data.get('correct', instance.correct)
+        instance.studyset_instance = instance.studyset_instance  # Ensure it's not changed
+        instance.flashcard_instance = instance.flashcard_instance  # Ensure it's not changed
+        instance.save()
+        return instance
+
 class GenerateRandomFlashcardSerializer(serializers.Serializer):
 
     studyset_instance = serializers.PrimaryKeyRelatedField(
