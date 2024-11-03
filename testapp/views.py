@@ -1,19 +1,14 @@
-from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
+# testapp/views.py
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_201_CREATED
 from rest_framework.response import Response
 from rest_framework import generics
 import random
+import uuid
 from flashcardapp.models import Flashcard
-from studysetapp.models import StudySet
-from .serializers import GenerateRandomFlashcardSerializer, TestModeFlashcardSerializer
-from .validators import validate_number_of_flashcards
-from .paginators import SingleQuestionPagination
+from .serializers import GenerateRandomFlashcardSerializer, GeneratedTestSerializer
 
-class GenerateRandomFlashcards(generics.GenericAPIView): # We did not use ListAPIView because this is customized to return a single question
+class GenerateRandomFlashcards(generics.GenericAPIView):
     serializer_class = GenerateRandomFlashcardSerializer
-    pagination_class = SingleQuestionPagination
-
-    def get_queryset(self):
-        return Flashcard.objects.none()
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -21,7 +16,12 @@ class GenerateRandomFlashcards(generics.GenericAPIView): # We did not use ListAP
             studyset_instance = serializer.validated_data.get('studyset_instance')
             number_of_flashcards = serializer.validated_data.get('number_of_flashcards')
             flashcards = self.get_random_flashcards(studyset_instance, number_of_flashcards)
-            return self.create_response(flashcards)
+            batch_id = str(uuid.uuid4())  # Generate a unique batch ID once
+            generated_tests = self.save_generated_tests(studyset_instance, flashcards, batch_id)
+            return Response({
+                'message': 'Generated tests created successfully.',
+                'generated_tests': GeneratedTestSerializer(generated_tests, many=True).data
+            }, status=HTTP_201_CREATED)
         else:
             return Response({
                 'message': 'Test mode flashcards could not be generated, please try again.',
@@ -29,21 +29,22 @@ class GenerateRandomFlashcards(generics.GenericAPIView): # We did not use ListAP
             }, status=HTTP_400_BAD_REQUEST)
 
     def get_random_flashcards(self, studyset_instance, number_of_flashcards):
-        limit = validate_number_of_flashcards(number_of_flashcards, studyset_instance)
         flashcards = list(Flashcard.objects.filter(studyset_instance=studyset_instance))
         random.shuffle(flashcards)
-        return flashcards[:limit]
+        return flashcards[:number_of_flashcards]
 
-    def create_response(self, flashcards):
-        serializer = TestModeFlashcardSerializer
-        if flashcards:  # If there is at least one flashcard
-            page = self.paginate_queryset(flashcards)
-            if page is not None:
-                paginated_serializer = self.get_paginated_response(serializer(page, many=True).data)
+    def save_generated_tests(self, studyset_instance, flashcards, batch_id):
+        generated_tests = []
+        for flashcard in flashcards:
+            data = {
+                'studyset_instance': studyset_instance.id,
+                'flashcard_instance': flashcard.id,
+                'batch_id': batch_id  # Use the same batch ID for all tests in this batch
+            }
+            serializer = GeneratedTestSerializer(data=data, context={'batch_id': batch_id})
+            if serializer.is_valid():
+                generated_test = serializer.save()
+                generated_tests.append(generated_test)
             else:
-                paginated_serializer = serializer(flashcards, many=True)
-            return Response(paginated_serializer.data, status=HTTP_200_OK)
-        else:
-            return Response({
-                'message': 'No flashcards found.',
-            }, status=HTTP_400_BAD_REQUEST)
+                raise ValueError(f"Invalid data: {serializer.errors}")
+        return generated_tests
