@@ -1,7 +1,8 @@
 # testapp/views.py
+from django.http import Http404
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_404_NOT_FOUND
 from rest_framework.response import Response
-from rest_framework import generics
+from rest_framework import generics, mixins
 import random
 import uuid
 from flashcardapp.models import Flashcard
@@ -57,26 +58,32 @@ class GenerateRandomFlashcards(generics.GenericAPIView):
                 }, status=HTTP_400_BAD_REQUEST)
         return generated_tests
 
-class PresentFlashCardView(generics.GenericAPIView):
+# Pseudocode
+# Retrieve all GeneratedTest through batch_id
+# Get the first GeneratedTest
+# Retrieve the flashcard_instance of the first GeneratedTest
+# Before moving to the next GeneratedTest, update the learner_answer and correct fields of the first GeneratedTest
+# Get the next GeneratedTest
+# Repeat until all GeneratedTest are updated
+class NoBackTracking(generics.GenericAPIView):
     serializer_class = LearnerAnswerSerializer
     pagination_class = SingleQuestionPagination
+    queryset = GeneratedTest.objects.all()
+    lookup_field = 'batch_id'
 
     def get_queryset(self):
-        generated_tests = GeneratedTest.objects.filter(batch_id=self.kwargs.get('batch_id'))
-        return generated_tests
+        batch_id = self.kwargs.get('batch_id')
+        return GeneratedTest.objects.filter(batch_id=batch_id).order_by('id')
 
     def get(self, request, *args, **kwargs):
+        batch_id = self.kwargs.get('batch_id')
         generated_tests = self.get_queryset()
         page = self.paginate_queryset(generated_tests)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(generated_tests, many=True)
-        return Response(serializer.data, status=HTTP_200_OK)
-
-    def validate_learner_answer(self, flashcard_id, studyset_instance, learner_answer):
-        flashcard = Flashcard.objects.get(id=flashcard_id, studyset_instance=studyset_instance)
-        return flashcard.answer in learner_answer
-    def put(self, request, *args, **kwargs):
-        pass
+        return Response({
+            'message': 'No flashcards found.',
+            'data': []
+        }, status=HTTP_200_OK)
 
