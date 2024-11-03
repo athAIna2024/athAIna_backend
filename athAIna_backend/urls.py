@@ -21,6 +21,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('account/', include('accountapp.urls')),
     path('flashcard/', include('flashcardapp.urls')),
+
+    path('test/', include('testapp.urls')),
     path('studyset/', include('studysetapp.urls')),
     path('report/', include('reportapp.urls')),
     path('contact/', include('contactinquiryapp.urls')),

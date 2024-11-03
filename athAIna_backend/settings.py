@@ -35,6 +35,7 @@ INSTALLED_APPS = [
 
     'accountapp.apps.AccountappConfig',
     'flashcardapp.apps.FlashcardappConfig',
+    'testapp.apps.TestappConfig',
     'studysetapp.apps.StudysetappConfig',
     'reportapp.apps.ReportappConfig',
     'contactinquiryapp.apps.ContactinquiryappConfig',
