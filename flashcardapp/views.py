@@ -8,7 +8,6 @@ from .paginators import StandardPaginationFlashcards, ReviewModePaginationFlashc
 from .serializers import FlashcardSerializer
 
 class CreateFlashcard(generics.CreateAPIView):
-    queryset = Flashcard.objects.all()
     serializer_class = FlashcardSerializer
 
     def perform_create(self, serializer):
@@ -18,18 +17,20 @@ class CreateFlashcard(generics.CreateAPIView):
         studyset_instance = serializer.validated_data.get('studyset_instance')
         serializer.save(question=question, answer=answer, image=image, studyset_instance=studyset_instance)
 
-    def post(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             self.perform_create(serializer)
             return Response({
                 'message': 'Flashcard created successfully.',
-                'data': serializer.data
+                'data': serializer.data,
+                'status': HTTP_201_CREATED
             }, status=HTTP_201_CREATED)
         else:
             return Response({
                 'message': 'Flashcard could not be created, please try again.',
-                'errors': serializer.errors
+                'errors': serializer.errors,
+                'status': HTTP_400_BAD_REQUEST
             }, status=HTTP_400_BAD_REQUEST)
 
 class ListOfFlashcards(generics.ListAPIView):
@@ -49,7 +50,8 @@ class ListOfFlashcards(generics.ListAPIView):
         if not serializer.data:
             return Response({
                 'message': 'No flashcards found.',
-                'data': serializer.data
+                'data': serializer.data,
+                'status': HTTP_200_OK
             }, status=HTTP_200_OK)
         else:
             return self.get_paginated_response(serializer.data)
@@ -71,11 +73,13 @@ class LibraryOfFlashcards(generics.ListAPIView):
         if not serializer.data:
             return Response({
                 'message': 'No flashcards found.',
-                'data': serializer.data
+                'data': serializer.data,
+                'status': HTTP_200_OK
             }, status=HTTP_200_OK)
         else:
-            return self.get_paginated_response(serializer.data)
-
+            response = self.get_paginated_response(serializer.data)
+            response.status_code = HTTP_200_OK
+            return response
 class ReviewModeFlashcard(generics.ListAPIView):
     queryset = Flashcard.objects.all().order_by('created_at')
     serializer_class = FlashcardSerializer
@@ -94,10 +98,13 @@ class ReviewModeFlashcard(generics.ListAPIView):
         if not serializer.data:
             return Response({
                 'message': 'No flashcards found.',
-                'data': serializer.data
+                'data': serializer.data,
+                'status': HTTP_200_OK
             }, status=HTTP_200_OK)
         else:
-            return self.get_paginated_response(serializer.data)
+            response = self.get_paginated_response(serializer.data)
+            response.status_code = HTTP_200_OK
+            return response
 
 class UpdateFlashcard(generics.RetrieveUpdateAPIView):
     queryset = Flashcard.objects.all()
@@ -120,7 +127,7 @@ class UpdateFlashcard(generics.RetrieveUpdateAPIView):
         studyset_instance = serializer.validated_data.get('studyset_instance')
         serializer.save(question=question, answer=answer, image=image, studyset_instance=studyset_instance)
 
-    def put(self, request, *args, **kwargs):
+    def update(self, request, *args, **kwargs):
         flashcard = self.get_object()
 
         # partial=True allows for partial updates
@@ -129,12 +136,14 @@ class UpdateFlashcard(generics.RetrieveUpdateAPIView):
             self.perform_update(serializer)
             return Response({
                 'message': 'Flashcard updated successfully.',
-                'data': serializer.data
+                'data': serializer.data,
+                'status': HTTP_200_OK
             }, status=HTTP_200_OK)
         else:
             return Response({
                 'message': 'Flashcard could not be updated, please try again.',
-                'errors': serializer.errors
+                'errors': serializer.errors,
+                'status': HTTP_400_BAD_REQUEST
             }, status=HTTP_400_BAD_REQUEST)
 
 class DeleteFlashcard(generics.RetrieveDestroyAPIView):
@@ -158,11 +167,13 @@ class DeleteFlashcard(generics.RetrieveDestroyAPIView):
             self.perform_delete(flashcard)
             return Response({
                 'message': 'Flashcard deleted successfully.',
-                'data': serializer.data
+                'data': serializer.data,
+                'status': HTTP_200_OK
             }, status=HTTP_200_OK)
         else:
             return Response({
                 'message': 'Flashcard could not be deleted, please try again.',
-                'errors': serializer.errors
+                'errors': serializer.errors,
+                'status': HTTP_400_BAD_REQUEST
             }, status=HTTP_400_BAD_REQUEST)
 

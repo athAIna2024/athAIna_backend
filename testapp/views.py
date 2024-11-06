@@ -12,26 +12,34 @@ from .models import GeneratedTest
 from .serializers import GeneratedTestSerializer
 from .paginators import SingleQuestionPagination
 
-class GenerateRandomFlashcards(generics.GenericAPIView):
+class GenerateRandomFlashcards(generics.CreateAPIView):
     serializer_class = GenerateRandomFlashcardSerializer
 
-    def post(self, request, *args, **kwargs):
+    def perform_create(self, serializer):
+        studyset_instance = serializer.validated_data.get('studyset_instance')
+        number_of_flashcards = serializer.validated_data.get('number_of_flashcards')
+        flashcards = self.get_random_flashcards(studyset_instance, number_of_flashcards)
+        batch_id = str(uuid.uuid4())  # Generate a unique batch ID once
+        generated_tests = self.save_generated_tests(studyset_instance, flashcards, batch_id)
+        serializer.validated_data['batch_id'] = batch_id
+        serializer.validated_data['generated_tests'] = generated_tests
+
+# testapp/views.py
+    def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            studyset_instance = serializer.validated_data.get('studyset_instance')
-            number_of_flashcards = serializer.validated_data.get('number_of_flashcards')
-            flashcards = self.get_random_flashcards(studyset_instance, number_of_flashcards)
-            batch_id = str(uuid.uuid4())  # Generate a unique batch ID once
-            generated_tests = self.save_generated_tests(studyset_instance, flashcards, batch_id)
+            self.perform_create(serializer)
             return Response({
                 'message': 'Generated tests created successfully.',
-                'batch_id': batch_id,
-                'generated_tests': GeneratedTestSerializer(generated_tests, many=True).data
+                'batch_id': serializer.validated_data['batch_id'],
+                'generated_tests': GeneratedTestSerializer(serializer.validated_data['generated_tests'], many=True).data,
+                'status': HTTP_201_CREATED
             }, status=HTTP_201_CREATED)
         else:
             return Response({
                 'message': 'Test mode flashcards could not be generated, please try again.',
-                'errors': serializer.errors
+                'errors': serializer.errors,
+                'status': HTTP_400_BAD_REQUEST
             }, status=HTTP_400_BAD_REQUEST)
 
     def get_random_flashcards(self, studyset_instance, number_of_flashcards):
@@ -65,25 +73,28 @@ class GenerateRandomFlashcards(generics.GenericAPIView):
 # Before moving to the next GeneratedTest, update the learner_answer and correct fields of the first GeneratedTest
 # Get the next GeneratedTest
 # Repeat until all GeneratedTest are updated
-class NoBackTracking(generics.GenericAPIView):
-    serializer_class = LearnerAnswerSerializer
+class NoBackTracking(generics.ListAPIView):
+    serializer_class = GeneratedTestSerializer
     pagination_class = SingleQuestionPagination
     queryset = GeneratedTest.objects.all()
-    lookup_field = 'batch_id'
-
     def get_queryset(self):
         batch_id = self.kwargs.get('batch_id')
-        return GeneratedTest.objects.filter(batch_id=batch_id).order_by('id')
+        return GeneratedTest.objects.filter(batch_id=batch_id)
 
     def get(self, request, *args, **kwargs):
-        batch_id = self.kwargs.get('batch_id')
-        generated_tests = self.get_queryset()
-        page = self.paginate_queryset(generated_tests)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        return Response({
-            'message': 'No flashcards found.',
-            'data': []
-        }, status=HTTP_200_OK)
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(page, many=True)
 
+        if not serializer.data:
+            return Response({
+                'message': 'No generated tests found.',
+                'data': serializer.data,
+                'status': HTTP_404_NOT_FOUND
+            }, status=HTTP_404_NOT_FOUND)
+        else:
+            return Response({
+                'message': 'Generated tests retrieved successfully.',
+                'data': serializer.data,
+                'status': HTTP_200_OK
+            }, status=HTTP_200_OK)
