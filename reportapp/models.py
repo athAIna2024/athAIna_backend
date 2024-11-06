@@ -4,7 +4,7 @@ from django.db import models
 class TestResult(models.Model):
     generated_test_instance = models.ForeignKey('testapp.GeneratedTest', on_delete=models.CASCADE, null=True, blank=True)
     score = models.IntegerField()
-    overall_score = models.IntegerField()
+    number_of_questions = models.IntegerField()
     submitted_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
