@@ -10,6 +10,7 @@ from .models import GeneratedTest
 from .serializers import GeneratedTestSerializer
 from .paginators import SingleQuestionPagination
 from reportapp.serializers import TestResultSerializer
+from rest_framework.exceptions import ValidationError
 
 class GenerateRandomFlashcards(generics.CreateAPIView):
     serializer_class = GenerateRandomFlashcardSerializer
@@ -124,60 +125,51 @@ class LearnerAnswerValidation(generics.RetrieveUpdateAPIView):
         else:
             return False
 
+class SaveTestResults(generics.GenericAPIView):
+    serializer_class = TestResultSerializer
 
-class SummaryScoreReport(generics.RetrieveAPIView):
-    queryset = GeneratedTest.objects.all()
-    serializer_class = LearnerAnswerSerializer # Change to TestResultSerializer
-    lookup_field = 'batch_id'
+    def extract_studyset_instance(self, batch_id):
+        try:
+            return GeneratedTest.objects.filter(batch_id=batch_id).first().studyset_instance
+        except GeneratedTest.DoesNotExist:
+            raise ValidationError('Studyset instance not found.')
 
-    def get_queryset(self):
-        batch_id = self.kwargs.get('batch_id')
-        return GeneratedTest.objects.filter(batch_id=batch_id)
+    def calculate_score(self, batch_id):
+        generated_tests = GeneratedTest.objects.filter(batch_id=batch_id)
+        total_correct = generated_tests.filter(correct=True).count()
+        return total_correct
+
+    def extract_number_of_questions(self, batch_id):
+        generated_tests = GeneratedTest.objects.filter(batch_id=batch_id)
+        total_questions = generated_tests.count()
+        return total_questions
+
+    def perform_create(self, serializer, batch_id):
+        studyset_instance = self.extract_studyset_instance(batch_id)
+        score = self.calculate_score(batch_id)
+        total_questions = self.extract_number_of_questions(batch_id)
+        serializer.save(studyset_instance=studyset_instance, score=score, number_of_questions=total_questions)
 
     def get(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
+        batch_id = kwargs.get('batch_id')
+        score = self.calculate_score(batch_id)
+        total_questions = self.extract_number_of_questions(batch_id)
+        data = {
+            'batch_id': batch_id,
+            'score': score,
+            'number_of_questions': total_questions
+        }
+        serializer = self.get_serializer(data=data)
 
-        if serializer.data:
-            total_questions = queryset.count()
-            total_correct = queryset.filter(correct=True).count()
-            total_incorrect = queryset.filter(correct=False).count()
-            score = (total_correct / total_questions) * 100 if total_questions > 0 else 0
+        if serializer.is_valid():
+            self.perform_create(serializer, batch_id)
             feedback = "Well done! Keep it up!" if score >= 70 else "Don't give up! You can do better!"
             return Response({
-                'message': 'Summary of scores found.',
+                'message': 'Test results saved successfully.',
                 'total_questions': total_questions,
-                'total_correct': total_correct,
-                'total_incorrect': total_incorrect,
+                'total_correct': score,
                 'score': score,
                 'feedback': feedback,
-                'data': serializer.data,
-                'status': HTTP_200_OK
-            }, status=HTTP_200_OK)
-        else:
-            return Response({
-                'message': 'No summary of scores found.',
-                'data': serializer.data,
-                'status': HTTP_404_NOT_FOUND
-            }, status=HTTP_404_NOT_FOUND)
-
-
-
-
-class SaveTestResults(generics.CreateAPIView):
-    serializer_class = TestResultSerializer
-    lookup_field = 'batch_id'
-
-    def get_queryset(self):
-        batch_id = self.kwargs.get('batch_id')
-        return GeneratedTest.objects.filter(batch_id=batch_id)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({
-                'message': 'Test results saved successfully.',
                 'data': serializer.data,
                 'status': HTTP_201_CREATED
             }, status=HTTP_201_CREATED)
@@ -187,19 +179,3 @@ class SaveTestResults(generics.CreateAPIView):
                 'errors': serializer.errors,
                 'status': HTTP_400_BAD_REQUEST
             }, status=HTTP_400_BAD_REQUEST)
-
-
-    def perform_create(self, serializer):
-        queryset = self.get_queryset()
-        score = self.calculate_score(queryset)
-        total_questions = self.number_of_questions(queryset)
-        serializer.validated_data['score'] = score
-        serializer.validated_data['total_questions'] = total_questions
-        serializer.save()
-    def calculate_score(self, queryset):
-        total_correct = queryset.filter(correct=True).count()
-        return total_correct
-
-    def number_of_questions(self, queryset):
-        return queryset.count()
-

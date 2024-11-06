@@ -2,34 +2,18 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST
 from reportapp.serializers import TestResultSerializer
-from testapp.models import GeneratedTest
-from rest_framework.exceptions import ValidationError
 
-
-# Create your views here.
 class SaveTestResults(generics.CreateAPIView):
     serializer_class = TestResultSerializer
 
-    def extract_studyset_instance(self, batch_id):
-        try:
-            return GeneratedTest.objects.get(batch_id=batch_id).studyset_instance
-        except GeneratedTest.DoesNotExist:
-            raise ValidationError('Studyset instance not found.')
+    def perform_create(self, serializer):
+        studyset_instance = serializer.validated_data.get('studyset_instance')
+        score = serializer.validated_data.get('score')
+        number_of_questions = serializer.validated_data.get('number_of_questions')
+        serializer.save(studyset_instance=studyset_instance, score=score, number_of_questions=number_of_questions)
 
-    def calculate_score(self, batch_id):
-        generated_tests = GeneratedTest.objects.filter(batch_id=batch_id)
-        score = generated_tests.filter(correct=True).count()
-        return score
-
-    def extract_number_of_questions(self, batch_id):
-        generated_tests = GeneratedTest.objects.filter(batch_id=batch_id)
-        number_of_questions = generated_tests.count()
-        return number_of_questions
-
-
-    def post(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-
         if serializer.is_valid():
             self.perform_create(serializer)
             return Response({
@@ -43,4 +27,3 @@ class SaveTestResults(generics.CreateAPIView):
                 'errors': serializer.errors,
                 'status': HTTP_400_BAD_REQUEST
             }, status=HTTP_400_BAD_REQUEST)
-
