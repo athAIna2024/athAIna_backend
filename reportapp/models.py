@@ -2,7 +2,7 @@ from django.db import models
 
 # Create your models here.
 class TestResult(models.Model):
-    generated_test_instance = models.ForeignKey('testapp.GeneratedTest', on_delete=models.CASCADE, null=True, blank=True)
+    studyset_instance = models.ForeignKey('studysetapp.StudySet', on_delete=models.CASCADE, null=True, blank=True)
     score = models.IntegerField()
     number_of_questions = models.IntegerField()
     submitted_at = models.DateTimeField(auto_now_add=True)
