@@ -6,3 +6,4 @@ pypdf2
 google-generativeai
 django-environ
 Pillow
+docling
