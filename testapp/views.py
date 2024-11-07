@@ -11,7 +11,7 @@ from .serializers import GeneratedTestSerializer
 from .paginators import SingleQuestionPagination
 from reportapp.serializers import TestResultSerializer
 from rest_framework.exceptions import ValidationError
-
+from testapp.ai_learner_answer_validator import validate_learner_answer_with_ai
 class GenerateRandomFlashcards(generics.CreateAPIView):
     serializer_class = GenerateRandomFlashcardSerializer
 
@@ -120,10 +120,15 @@ class LearnerAnswerValidation(generics.RetrieveUpdateAPIView):
             }, status=HTTP_400_BAD_REQUEST)
     def validate_learner_answer(self, learner_answer, answer):
         # Implement Google-Gemini API to validate partial match answer
-        if learner_answer is not None and learner_answer.lower() == answer.lower():
-            return True
-        else:
-            return False
+        generated_test = self.get_object()
+        if learner_answer is not None:
+            if learner_answer == answer:
+                return True
+            else:
+                if validate_learner_answer_with_ai(generated_test.flashcard_instance.question, answer, learner_answer):
+                    return True
+                else:
+                    return False
 
 class SaveTestResults(generics.GenericAPIView):
     serializer_class = TestResultSerializer
