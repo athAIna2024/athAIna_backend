@@ -7,6 +7,5 @@ urlpatterns = [
     path('library/', views.LibraryOfFlashcards.as_view(), name='library_flashcards'),
     path('review_mode/', views.ReviewModeFlashcard.as_view(), name='review_flashcards'),
     path('update/<int:id>/', views.UpdateFlashcard.as_view(), name='update_flashcard'),
-
     path('delete/<int:id>/', views.DeleteFlashcard.as_view(), name='delete_flashcard'),
 ]
