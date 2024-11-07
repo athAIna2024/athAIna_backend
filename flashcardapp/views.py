@@ -3,7 +3,7 @@ from django.http import Http404
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework import generics
-from .models import Flashcard, PDF
+from .models import Flashcard
 from .paginators import StandardPaginationFlashcards, ReviewModePaginationFlashcard
 from .serializers import FlashcardSerializer
 
