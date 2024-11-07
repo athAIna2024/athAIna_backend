@@ -1,12 +1,15 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
+from rest_framework.routers import DefaultRouter
+
+router = DefaultRouter()
+router.register(r'create', views.CreateFlashcard, basename='create_flashcard')
+router.register(r'list', views.ListOfFlashcards, basename='list_flashcards')
+router.register(r'library', views.LibraryOfFlashcards, basename='library_flashcards')
+router.register(r'review_mode', views.ReviewModeFlashcard, basename='review_flashcards')
+router.register(r'update', views.UpdateFlashcard, basename='update_flashcard')
+router.register(r'delete', views.DeleteFlashcard, basename='delete_flashcard')
 
 urlpatterns = [
-    path('create/', views.CreateFlashcard.as_view(), name='create_flashcard'),
-    path('list/', views.ListOfFlashcards.as_view(), name='list_flashcards'),
-    path('library/', views.LibraryOfFlashcards.as_view(), name='library_flashcards'),
-    path('review_mode/', views.ReviewModeFlashcard.as_view(), name='review_flashcards'),
-    path('update/<int:id>/', views.UpdateFlashcard.as_view(), name='update_flashcard'),
-
-    path('delete/<int:id>/', views.DeleteFlashcard.as_view(), name='delete_flashcard'),
+    path('', include(router.urls)),
 ]
