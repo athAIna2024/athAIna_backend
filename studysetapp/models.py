@@ -26,3 +26,12 @@ class StudySet(models.Model):
 
     def __str__(self):
         return self.title
+
+class PDF(models.Model):
+    pdf = models.FileField(upload_to='pdfs/')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    studyset_instance = models.ForeignKey('studysetapp.StudySet', on_delete=models.CASCADE, related_name='pdfs')
+
+    def __str__(self):
+        return f"PDF {self.id}"
