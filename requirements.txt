@@ -4,5 +4,7 @@ requests
 django-cors-headers
 pypdf2
 google-generativeai
-django-environ
+django-environ~=0.11.2
 Pillow
+
+djangorestframework-simplejwt~=5.3.1
