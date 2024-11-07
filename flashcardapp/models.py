@@ -19,4 +19,4 @@ class PDF(models.Model):
     studyset_instance = models.ForeignKey('studysetapp.StudySet', on_delete=models.CASCADE, related_name='pdfs')
 
     def __str__(self):
-        return self.title
+        return f"PDF {self.id}"
