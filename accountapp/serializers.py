@@ -32,3 +32,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             password=validated_data['password'],
         )
         return user
+
+class VerifyUserEmailSerializer(serializers.Serializer):
+    otp = serializers.CharField(max_length=6)
