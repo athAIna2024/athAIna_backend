@@ -35,3 +35,30 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 class VerifyUserEmailSerializer(serializers.Serializer):
     otp = serializers.CharField(max_length=6)
+
+class LoginSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(max_length=255, min_length=6)
+    password = serializers.CharField(max_length=69, min_length=8, write_only=True)
+    access_token = serializers.CharField(max_length=255, read_only=True)
+    refresh_token = serializers.CharField(max_length=255, read_only=True)
+
+    class Meta:
+        model = User
+        fields = ['email', 'password', 'access_token', 'refresh_token']
+
+    def validate(self, attrs):
+        email = attrs.get('email', '')
+        password = attrs.get('password', '')
+        request = self.context.get('request')
+        user=authenticate(request, email=email, password=password)
+        if not user:
+            raise serializers.ValidationError('Invalid credentials')
+        if not user.is_verified:
+            raise AuthenticationFailed('Account is not verified')
+        user_tokens=user.token()
+
+        return {
+            'email': user.email,
+            'access_token': str(user_tokens.get('access')),
+            'refresh_token': str(user_tokens.get('refresh')),
+        }

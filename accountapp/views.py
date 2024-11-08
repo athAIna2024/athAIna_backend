@@ -1,9 +1,10 @@
 from django.shortcuts import render
 from rest_framework.generics import GenericAPIView
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 
 from accountapp.models import OneTimePassword
-from accountapp.serializers import UserRegistrationSerializer, VerifyUserEmailSerializer
+from accountapp.serializers import UserRegistrationSerializer, VerifyUserEmailSerializer, LoginSerializer
 from accountapp.utils import send_code_to_user
 from rest_framework.response import Response
 
@@ -51,3 +52,19 @@ class VerifyUserEmail(GenericAPIView):
             return Response({
                 "message": "Invalid OTP"
             }, status=status.HTTP_400_BAD_REQUEST)
+
+class LoginUserView(GenericAPIView):
+    serializer_class = LoginSerializer
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class TestAuthView(GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        data = {
+            "message": "debug - authentication feature working"
+        }
+        return Response(data, status=status.HTTP_200_OK)
