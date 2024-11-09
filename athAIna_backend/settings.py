@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pathlib import Path
 import environ
 
@@ -41,7 +42,9 @@ INSTALLED_APPS = [
     'contactinquiryapp.apps.ContactinquiryappConfig',
 
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
+
 ]
 
 MIDDLEWARE = [
@@ -85,6 +88,22 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
+}
+AUTH_USER_MODEL = 'accountapp.User'
+
+REST_FRAMEWORK = {
+
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
 # For now, we will not setup the database connection.
@@ -146,3 +165,9 @@ MEDIA_ROOT = BASE_DIR / env("MEDIA_ROOT_LOCAL")
 
 # CORS
 CORS_ORIGIN_WHITELIST = env.list('CORS_ORIGIN_WHITELIST', default=[])
+
+EMAIL_HOST=env('EMAIL_HOST')
+EMAIL_HOST_USER=env('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD=env('EMAIL_HOST_PASSWORD')
+EMAIL_PORT=env('EMAIL_PORT')
+EMAIL_USE_TLS=env('EMAIL_USE_TLS')
