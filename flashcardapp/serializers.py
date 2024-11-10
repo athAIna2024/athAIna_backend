@@ -43,3 +43,9 @@ class FlashcardSerializer(serializers.ModelSerializer):
         error_messages={
             'invalid_image': 'Please provide a valid image file.',
         })
+
+class GeneratedFlashcardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Flashcard
+        fields = ['question', 'answer', 'image', 'studyset_instance', 'created_at', 'updated_at']
+        read_only_fields = ['image', 'created_at', 'updated_at']

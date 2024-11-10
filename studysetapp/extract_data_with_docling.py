@@ -41,11 +41,13 @@ doc_converter = DocumentConverter(
 )
 
 
-def extract_data_from_media_file(file_name):
+def extract_data_from_document(file_name):
     fs = FileSystemStorage(location=settings.MEDIA_ROOT / 'documents')
-    file_path = fs.path(file_name + '_selected_pages.pdf')
+    file_path = fs.path(file_name)
+
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
     converted_results = doc_converter.convert(Path(file_path))
     return converted_results.document.export_to_markdown()
 
-# Testing the function
-print(extract_data_from_media_file(r"Networking_Module_8_to_10"))
+print(extract_data_from_document('Networking_Module_8_to_10.pdf'))
