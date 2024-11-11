@@ -1,3 +1,6 @@
 # created by virtualenv automatically
 .venv/
 .env
+settings.py
+db.sqlite3
+migration files
