@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import StudySet, Document
-from .validators import validate_file_extension
+from .validators import validate_file_extension, validate_pdf_pages
 
 class StudySetSerializer(serializers.ModelSerializer):
     class Meta:
@@ -52,4 +52,18 @@ class DocumentSerializer(serializers.ModelSerializer):
         required=True,
         error_messages={
             'required': 'Please provide a study set instance',
+        })
+
+class ChoosePagesFromPDFSerializer(serializers.Serializer):
+    first_page_number = serializers.IntegerField(
+        required=True,
+        validators=[validate_pdf_pages],
+        error_messages={
+            'required': 'Please provide the first page number',
+        })
+    second_page_number = serializers.IntegerField(
+        required=True,
+        validators=[validate_pdf_pages],
+        error_messages={
+            'required': 'Please provide the second page number',
         })

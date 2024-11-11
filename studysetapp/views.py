@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework import generics
 from .models import StudySet
 from .serializers import StudySetSerializer, DocumentSerializer
-
-
+from flashcardapp.serializers import GeneratedFlashcardSerializer
+from generate_flashcards_with_ai import generate_data_for_flashcards, populate_flashcards
 # Create your views here.
 
 class CreateStudySet(generics.CreateAPIView):
@@ -53,3 +53,12 @@ class UploadDocument(generics.CreateAPIView):
                 'status': HTTP_400_BAD_REQUEST,
                 'errors': serializer.errors
             }, status=HTTP_400_BAD_REQUEST)
+
+class ChoosePagesFromPDF(generics.GenericAPIView):
+    pass
+
+class ExtractTextFromPDF(generics.GenericAPIView):
+    pass
+
+class GenerateFlashcards(generic.CreateAPIView):
+    pass

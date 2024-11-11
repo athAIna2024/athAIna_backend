@@ -66,6 +66,7 @@ def populate_flashcards(studyset_instance, data):
     flashcard_data = data.split("\n")
     flashcard_data = [flashcard.split("/") for flashcard in flashcard_data]
     Studyset_instance = StudySet.objects.get(id=studyset_instance)
+    errors = []
     for flashcard in flashcard_data:
         question = flashcard[0].replace("Question:", "").strip()
         answer = flashcard[1].replace("Answer:", "").strip()
@@ -77,6 +78,7 @@ def populate_flashcards(studyset_instance, data):
         if serializer.is_valid():
             serializer.save()
         else:
-            print(serializer.errors)
+            errors.append(serializer.errors)
+    return errors
 
 
