@@ -10,3 +10,4 @@ reportapp/migrations
 testapp/migrations
 studysetapp/migrations
 templates
+__pycache__
