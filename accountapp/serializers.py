@@ -1,13 +1,13 @@
 from rest_framework import serializers
 from urllib3 import request
-from accountapp.models import User
+from accountapp.models import User, OneTimePassword
 from django.contrib.auth import authenticate
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import smart_str, smart_bytes, force_str
 from django.urls import reverse
-from .utils import send_normal_email
+from .utils import send_normal_email, generateOtp
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.sites.shortcuts import get_current_site
@@ -74,18 +74,21 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 
     class Meta:
         fields = ['email']
+
     def validate(self, attrs):
         email = attrs.get('email')
         if User.objects.filter(email=email).exists():
             user = User.objects.get(email=email)
+            # Delete any existing OTP for the user
+            OneTimePassword.objects.filter(user=user).delete()
+            otp_code = OneTimePassword.objects.create(user=user, code=generateOtp())  # Assuming generate_otp() is a utility function to generate OTP
             uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
             token = PasswordResetTokenGenerator().make_token(user)
             request = self.context.get('request')
             current_site = get_current_site(request).domain
             relative_link = reverse('reset-password-confirm', kwargs={'uidb64': uidb64, 'token': token})
             abslink = f"http://{current_site}{relative_link}"
-            print(abslink)
-            email_body = f"Please use the link below to reset your password {abslink}"
+            email_body = f"Please use the link below to reset your password {abslink}\nYour OTP code is {otp_code.code}"
             data = {
                 'email_body': email_body,
                 'email_subject': "Reset your Password",
@@ -94,19 +97,21 @@ class PasswordResetRequestSerializer(serializers.Serializer):
             send_normal_email(data)
         return super().validate(attrs)
 
-class SetNewPasswordSerializer( serializers.Serializer):
+class SetNewPasswordSerializer(serializers.Serializer):
     password = serializers.CharField(max_length=100, min_length=6, write_only=True)
     confirm_password = serializers.CharField(max_length=100, min_length=6, write_only=True)
     uidb64 = serializers.CharField(write_only=True)
-    token=serializers.CharField(write_only=True)
+    token = serializers.CharField(write_only=True)
+    otp = serializers.CharField(write_only=True)
 
     class Meta:
-        fields = ['password', 'confirm_password', 'uidb64', 'token']
+        fields = ['password', 'confirm_password', 'uidb64', 'token', 'otp']
 
     def validate(self, attrs):
         try:
-            token = attrs.get('token')
             uidb64 = attrs.get('uidb64')
+            token = attrs.get('token')
+            otp_code = attrs.get('otp')
             password = attrs.get('password')
             confirm_password = attrs.get('confirm_password')
 
@@ -114,11 +119,14 @@ class SetNewPasswordSerializer( serializers.Serializer):
             user = User.objects.get(id=user_id)
             if not PasswordResetTokenGenerator().check_token(user, token):
                 raise serializers.ValidationError('The reset link is invalid or expired', code=401)
+            otp_obj = OneTimePassword.objects.get(code=otp_code)
+            if otp_obj.user != user:
+                raise serializers.ValidationError('Invalid OTP')
             if password != confirm_password:
-                raise serializers.ValidationError('Password do not match')
+                raise serializers.ValidationError('Passwords do not match')
             user.set_password(password)
             user.save()
             return user
         except Exception as e:
-            return AuthenticationFailed('The reset link is invalid or expired')
+            raise serializers.ValidationError('An error occurred')
 

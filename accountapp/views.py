@@ -82,24 +82,35 @@ class PasswordResetRequestView(GenericAPIView):
         }, status=status.HTTP_200_OK)
 
 class PasswordResetConfirm(GenericAPIView):
-    def get(self, request, uidb64, token):
+    serializer_class = SetNewPasswordSerializer
+
+    def post(self, request):
+        otp_code = request.data.get('otp')
+        uidb64 = request.data.get('uidb64')
+        token = request.data.get('token')
         try:
-            user_id=smart_str(urlsafe_base64_decode(uidb64))
-            user=User.objects.get(id=user_id)
+            user_id = smart_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(id=user_id)
             if not PasswordResetTokenGenerator().check_token(user, token):
                 return Response({
-                    "msg": "Token is not valid, please request a new one"}, status=status.HTTP_401_UNAUTHORIZED)
+                    "msg": "Token is not valid, please request a new one"
+                }, status=status.HTTP_401_UNAUTHORIZED)
+            otp_obj = OneTimePassword.objects.get(code=otp_code)
+            if otp_obj.user != user:
+                return Response({
+                    "msg": "Invalid OTP"
+                }, status=status.HTTP_400_BAD_REQUEST)
             return Response({
                 "success": True,
                 "msg": "Credentials Valid",
                 "uidb64": uidb64,
-                "token": token
+                "token": token,
+                "otp": otp_code
             }, status=status.HTTP_200_OK)
-
-        except DjangoUnicodeDecodeError:
+        except (OneTimePassword.DoesNotExist, DjangoUnicodeDecodeError, User.DoesNotExist):
             return Response({
-                "msg": "Token is not valid or expired, please request a new one"}, status=status.HTTP_401_UNAUTHORIZED)
-
+                "msg": "Invalid OTP or token"
+            }, status=status.HTTP_400_BAD_REQUEST)
 class SetNewPassword(GenericAPIView):
     serializer_class = SetNewPasswordSerializer
     def patch(self, request):
