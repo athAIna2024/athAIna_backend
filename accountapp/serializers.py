@@ -1,3 +1,4 @@
+from httplib2.auth import token
 from rest_framework import serializers
 from urllib3 import request
 from accountapp.models import User, OneTimePassword
@@ -13,6 +14,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.sites.shortcuts import get_current_site
 from django.utils.encoding import smart_str, smart_bytes, force_str
 from django.urls import reverse
+from rest_framework_simplejwt.tokens import RefreshToken,TokenError
 
 
 
@@ -110,3 +112,20 @@ class SetNewPasswordSerializer(serializers.Serializer):
         if password != confirm_password:
             raise serializers.ValidationError('Passwords do not match')
         return attrs
+class LogoutUserSerialezer(serializers.Serializer):
+    refresh_token = serializers.CharField()
+
+    default_error_messages = {
+        'bad_token': ('Token is expired or invalid')
+    }
+
+    def validate(self, attrs):
+        self.token=attrs.get('refresh_token')
+        return attrs
+
+    def save(self, **kwargs):
+        try:
+            token=RefreshToken(self.token)
+            token.blacklist()
+        except TokenError:
+            return self.fail('bad_token')
