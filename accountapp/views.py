@@ -2,6 +2,7 @@ from django.shortcuts import render
 from rest_framework.generics import GenericAPIView
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from accountapp.models import OneTimePassword, User
 from accountapp.serializers import UserRegistrationSerializer, VerifyUserEmailSerializer, LoginSerializer, SetNewPasswordSerializer,\
@@ -84,10 +85,8 @@ class PasswordResetRequestView(GenericAPIView):
 class PasswordResetConfirm(GenericAPIView):
     serializer_class = SetNewPasswordSerializer
 
-    def post(self, request):
+    def post(self, request, uidb64, token):
         otp_code = request.data.get('otp')
-        uidb64 = request.data.get('uidb64')
-        token = request.data.get('token')
         try:
             user_id = smart_str(urlsafe_base64_decode(uidb64))
             user = User.objects.get(id=user_id)
@@ -120,3 +119,36 @@ class SetNewPassword(GenericAPIView):
             "message": "Password reset successful"
         }, status=status.HTTP_200_OK)
 
+
+class OTPVerificationView(GenericAPIView):
+    serializer_class = VerifyUserEmailSerializer
+
+    def post(self, request):
+        otp_code = request.data.get('otp')
+        try:
+            otp_obj = OneTimePassword.objects.get(code=otp_code)
+            user = otp_obj.user
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                "success": True,
+                "msg": "OTP is valid",
+                "access": str(refresh.access_token),
+            }, status=status.HTTP_200_OK)
+        except OneTimePassword.DoesNotExist:
+            return Response({
+                "msg": "Invalid OTP"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+class PasswordChangeView(GenericAPIView):
+    serializer_class = SetNewPasswordSerializer
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+        serializer = self.serializer_class(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = request.user
+        user.set_password(serializer.validated_data['password'])
+        user.save()
+        return Response({
+            "message": "Password reset successful"
+        }, status=status.HTTP_200_OK)

@@ -100,33 +100,13 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 class SetNewPasswordSerializer(serializers.Serializer):
     password = serializers.CharField(max_length=100, min_length=6, write_only=True)
     confirm_password = serializers.CharField(max_length=100, min_length=6, write_only=True)
-    uidb64 = serializers.CharField(write_only=True)
-    token = serializers.CharField(write_only=True)
-    otp = serializers.CharField(write_only=True)
 
     class Meta:
-        fields = ['password', 'confirm_password', 'uidb64', 'token', 'otp']
+        fields = ['password', 'confirm_password']
 
     def validate(self, attrs):
-        try:
-            uidb64 = attrs.get('uidb64')
-            token = attrs.get('token')
-            otp_code = attrs.get('otp')
-            password = attrs.get('password')
-            confirm_password = attrs.get('confirm_password')
-
-            user_id = force_str(urlsafe_base64_decode(uidb64))
-            user = User.objects.get(id=user_id)
-            if not PasswordResetTokenGenerator().check_token(user, token):
-                raise serializers.ValidationError('The reset link is invalid or expired', code=401)
-            otp_obj = OneTimePassword.objects.get(code=otp_code)
-            if otp_obj.user != user:
-                raise serializers.ValidationError('Invalid OTP')
-            if password != confirm_password:
-                raise serializers.ValidationError('Passwords do not match')
-            user.set_password(password)
-            user.save()
-            return user
-        except Exception as e:
-            raise serializers.ValidationError('An error occurred')
-
+        password = attrs.get('password')
+        confirm_password = attrs.get('confirm_password')
+        if password != confirm_password:
+            raise serializers.ValidationError('Passwords do not match')
+        return attrs
