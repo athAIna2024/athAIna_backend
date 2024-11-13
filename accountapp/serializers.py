@@ -112,6 +112,36 @@ class SetNewPasswordSerializer(serializers.Serializer):
         if password != confirm_password:
             raise serializers.ValidationError('Passwords do not match')
         return attrs
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(max_length=100, min_length=6, write_only=True)
+    new_password = serializers.CharField(max_length=100, min_length=6, write_only=True)
+    confirm_new_password = serializers.CharField(max_length=100, min_length=6, write_only=True)
+
+    class Meta:
+        fields = ['old_password', 'new_password', 'confirm_new_password']
+
+    def validate(self, attrs):
+        old_password = attrs.get('old_password')
+        new_password = attrs.get('new_password')
+        confirm_new_password = attrs.get('confirm_new_password')
+
+        if new_password != confirm_new_password:
+            raise serializers.ValidationError('New passwords do not match')
+
+        user = self.context['request'].user
+        if not user.check_password(old_password):
+            raise serializers.ValidationError('Old password is incorrect')
+
+        return attrs
+
+    def save(self, **kwargs):
+        user = self.context['request'].user
+        user.set_password(self.validated_data['new_password'])
+        user.save()
+        return user
+
+
 class LogoutUserSerialezer(serializers.Serializer):
     refresh_token = serializers.CharField()
 
