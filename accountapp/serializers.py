@@ -15,12 +15,10 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.utils.encoding import smart_str, smart_bytes, force_str
 from django.urls import reverse
 from rest_framework_simplejwt.tokens import RefreshToken,TokenError
-
-
-
+import re
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(max_length=69,min_length=8,write_only=True)
+    password = serializers.CharField(max_length=69, min_length=8, write_only=True)
     password2 = serializers.CharField(max_length=69, min_length=8, write_only=True)
 
     class Meta:
@@ -30,13 +28,24 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         password = attrs.get('password', '')
         password2 = attrs.get('password2', '')
+
         if password != password2:
-            raise serializers.ValidationError('Password do not match')
+            raise serializers.ValidationError('Passwords do not match')
+
+        if len(password) < 8:
+            raise serializers.ValidationError('Password must be longer than 8 characters')
+
+        if not re.search(r'\d', password):
+            raise serializers.ValidationError('Password must contain at least one number')
+
+        if password.isdigit():
+            raise serializers.ValidationError('Password cannot be completely numeric')
+
         return attrs
 
     def create(self, validated_data):
         user = User.objects.create_user(
-            email = validated_data['email'],
+            email=validated_data['email'],
             password=validated_data['password'],
         )
         return user
@@ -103,20 +112,41 @@ class SetNewPasswordSerializer(serializers.Serializer):
     password = serializers.CharField(max_length=100, min_length=6, write_only=True)
     confirm_password = serializers.CharField(max_length=100, min_length=6, write_only=True)
 
+    # class Meta:
+    #     fields = ['password', 'confirm_password']
+    #
+    # def validate(self, attrs):
+    #     password = attrs.get('password')
+    #     confirm_password = attrs.get('confirm_password')
+    #     if password != confirm_password:
+    #         raise serializers.ValidationError('Passwords do not match')
+    #     return attrs
+
     class Meta:
         fields = ['password', 'confirm_password']
 
     def validate(self, attrs):
         password = attrs.get('password')
         confirm_password = attrs.get('confirm_password')
+
         if password != confirm_password:
             raise serializers.ValidationError('Passwords do not match')
+
+        if len(password) < 8:
+            raise serializers.ValidationError('Password must be longer than 8 characters')
+
+        if not re.search(r'\d', password):
+            raise serializers.ValidationError('Password must contain at least one number')
+
+        if password.isdigit():
+            raise serializers.ValidationError('Password cannot be entirely numeric')
+
         return attrs
 
 class ChangePasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(max_length=100, min_length=6, write_only=True)
-    new_password = serializers.CharField(max_length=100, min_length=6, write_only=True)
-    confirm_new_password = serializers.CharField(max_length=100, min_length=6, write_only=True)
+    old_password = serializers.CharField(max_length=100, min_length=8, write_only=True)
+    new_password = serializers.CharField(max_length=100, min_length=8, write_only=True)
+    confirm_new_password = serializers.CharField(max_length=100, min_length=8, write_only=True)
 
     class Meta:
         fields = ['old_password', 'new_password', 'confirm_new_password']
@@ -125,11 +155,23 @@ class ChangePasswordSerializer(serializers.Serializer):
         old_password = attrs.get('old_password')
         new_password = attrs.get('new_password')
         confirm_new_password = attrs.get('confirm_new_password')
+        user = self.context['request'].user
 
         if new_password != confirm_new_password:
             raise serializers.ValidationError('New passwords do not match')
 
-        user = self.context['request'].user
+        if new_password == old_password:
+            raise serializers.ValidationError('New password cannot be the same as the old password')
+
+        if len(new_password) < 8:
+            raise serializers.ValidationError('Password must be longer than 8 characters')
+
+        if not re.search(r'\d', new_password):
+            raise serializers.ValidationError('Password must contain at least one number')
+
+        if new_password.isdigit():
+            raise serializers.ValidationError('Password cannot be entirely numeric')
+
         if not user.check_password(old_password):
             raise serializers.ValidationError('Old password is incorrect')
 
