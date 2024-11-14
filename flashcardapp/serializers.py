@@ -1,11 +1,21 @@
 from rest_framework import serializers
-from .models import Flashcard, PDF
-from .validators import validate_image_size, validate_studyset_id
+from studysetapp.models import StudySet
+from .models import Flashcard
+from .validators import validate_image_size
 
 class FlashcardSerializer(serializers.ModelSerializer):
+    studyset_instance = serializers.PrimaryKeyRelatedField(
+        queryset=StudySet.objects.all(),
+        required=True,
+        error_messages={
+            'required': 'Please choose a study set',
+        }
+    )
+
     class Meta:
         model = Flashcard
-        fields = ['question', 'answer', 'image', 'studyset_id']
+        fields = ['question', 'answer', 'image', 'studyset_instance', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']
 
     question = serializers.CharField(
         max_length=300,
@@ -34,9 +44,8 @@ class FlashcardSerializer(serializers.ModelSerializer):
             'invalid_image': 'Please provide a valid image file.',
         })
 
-    studyset_id = serializers.IntegerField(
-        required=True,
-        validators=[validate_studyset_id],
-        error_messages={
-            'required': 'Please provide a studyset id',
-        })
+class GeneratedFlashcardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Flashcard
+        fields = ['question', 'answer', 'image', 'studyset_instance', 'created_at', 'updated_at']
+        read_only_fields = ['image', 'created_at', 'updated_at']
