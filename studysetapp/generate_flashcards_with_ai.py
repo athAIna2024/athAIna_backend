@@ -2,7 +2,7 @@ import google.generativeai as genai
 import environ
 from pathlib import Path
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
-from extract_document_data import extract_data_from_pdf
+from .extract_document_data import extract_data_from_pdf
 from flashcardapp.serializers import GeneratedFlashcardSerializer
 from studysetapp.models import StudySet
 
