@@ -1,6 +1,8 @@
+from django.utils import timezone
+
 from django.shortcuts import render
 from google.protobuf.proto_json import serialize
-from rest_framework.generics import GenericAPIView, UpdateAPIView
+from rest_framework.generics import GenericAPIView, UpdateAPIView, DestroyAPIView
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -174,3 +176,16 @@ class LogoutUserView(GenericAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class DeleteUserView(GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, *args, **kwargs):
+        user = request.user
+        user.is_active = False
+        user.archive_date = timezone.now()
+        user.save()
+        return Response({
+            "message": "User deleted successfully"
+        }, status=status.HTTP_200_OK)
