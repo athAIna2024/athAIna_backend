@@ -1,7 +1,8 @@
 from django.db import models
+from django_softdelete.models import SoftDeleteModel
 
 # Create your models here.
-class Flashcard(models.Model):
+class Flashcard(SoftDeleteModel):
     question = models.CharField(max_length=300)
     answer = models.CharField(max_length=100)
     image = models.ImageField(upload_to='flashcard_images/', null=True, blank=True)
