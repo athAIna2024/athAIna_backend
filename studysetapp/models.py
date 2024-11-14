@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
-class StudySet(models.Model):
+from django_softdelete.models import SoftDeleteModel
+class StudySet(SoftDeleteModel):
     class SubjectChoices(models.TextChoices): # Enumerating the choices for the subjects
         ARTS = 'ARTS', _('Arts')
         BUSINESS = 'BUS', _('Business')
