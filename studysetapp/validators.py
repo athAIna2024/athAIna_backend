@@ -1,6 +1,6 @@
 import os
 from rest_framework.exceptions import ValidationError
-from extract_certain_pages_from_document import extract_pdf_page_count
+from .extract_certain_pages_from_document import extract_pdf_page_count
 
 def validate_file_extension(value):
     ext = os.path.splitext(value.name)[1].lower()

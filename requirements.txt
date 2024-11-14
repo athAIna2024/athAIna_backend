@@ -7,5 +7,6 @@ google-generativeai
 django-environ~=0.11.2
 Pillow
 docling
+pyclean
 djangorestframework-simplejwt~=5.3.1
 

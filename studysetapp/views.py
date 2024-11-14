@@ -4,7 +4,7 @@ from rest_framework import generics
 from .models import StudySet
 from .serializers import StudySetSerializer, DocumentSerializer
 from flashcardapp.serializers import GeneratedFlashcardSerializer
-from generate_flashcards_with_ai import generate_data_for_flashcards, populate_flashcards
+from .generate_flashcards_with_ai import generate_data_for_flashcards, populate_flashcards
 # Create your views here.
 
 class CreateStudySet(generics.CreateAPIView):
@@ -60,5 +60,5 @@ class ChoosePagesFromPDF(generics.GenericAPIView):
 class ExtractTextFromPDF(generics.GenericAPIView):
     pass
 
-class GenerateFlashcards(generic.CreateAPIView):
+class GenerateFlashcards(generics.CreateAPIView):
     pass

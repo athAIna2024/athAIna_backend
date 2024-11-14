@@ -1,7 +1,11 @@
 # created by virtualenv automatically
+.idea
 .venv/
 .env
+
+__pycache__
 media
+athAIna_backend/
 db.sqlite3
 accountapp/migrations
 contactinquiryapp/migrations
@@ -10,4 +14,3 @@ reportapp/migrations
 testapp/migrations
 studysetapp/migrations
 templates
-__pycache__
