@@ -180,3 +180,10 @@ CELERY_CONFIG = {
     'CELERY_RESULT_SERIALIZER': env('CELERY_RESULT_SERIALIZER'),
     'CELERY_TIMEZONE': env('CELERY_TIMEZONE'),
 }
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": env('REDIS_URL'),
+    }
+}
