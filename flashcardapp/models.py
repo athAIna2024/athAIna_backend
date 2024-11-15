@@ -9,6 +9,7 @@ class Flashcard(SoftDeleteModel):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     studyset_instance = models.ForeignKey('studysetapp.StudySet', on_delete=models.CASCADE, related_name='flashcards')
+    is_ai_generated = models.BooleanField(default=False)
 
     def __str__(self):
         return self.question
