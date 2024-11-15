@@ -1,10 +1,21 @@
+import os
+import django
+
+# Set the environment variable for Django settings module
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'athAIna_backend.settings')
+
+# Initialize Django
+django.setup()
+
 import google.generativeai as genai
 import environ
 from pathlib import Path
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
-from .extract_document_data import extract_data_from_pdf
 from flashcardapp.serializers import GeneratedFlashcardSerializer
 from studysetapp.models import StudySet
+from studysetapp.pymupdf_utils import extract_data_from_pdf
+from studysetapp.docling_utils import extract_data_from_document
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -44,7 +55,7 @@ model = genai.GenerativeModel(
 )
 
 def generate_data_for_flashcards(pdf_file_name):
-    text_data = extract_data_from_pdf(pdf_file_name)
+    text_data = extract_data_from_document(pdf_file_name) # Change either by docling or PyMuPDF
     prompt = f"Data: {text_data}"
     response = model.generate_content(
         prompt,
@@ -73,7 +84,7 @@ def populate_flashcards(studyset_instance, data):
         serializer = GeneratedFlashcardSerializer(data={
             'question': question,
             'answer': answer,
-            'studyset_instance': Studyset_instance.id
+            'studyset_instance': Studyset_instance.id,
         })
         if serializer.is_valid():
             serializer.save()
@@ -82,3 +93,5 @@ def populate_flashcards(studyset_instance, data):
     return errors
 
 
+# Example usage
+print(generate_data_for_flashcards("Networking_Module_8_to_10"))
