@@ -7,7 +7,7 @@ import PyPDF2
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'athAIna_backend.settings')
 django.setup()
 
-def extract_pdf_pages(file_name, page_numbers):
+def create_new_pdf_for_selected_pages(file_name, page_numbers):
     fs = FileSystemStorage(location=settings.MEDIA_ROOT / 'documents')
     pdf_path = fs.path(file_name)
 
