@@ -4,4 +4,6 @@ from . import views
 urlpatterns = [
     path('create/', views.CreateStudySet.as_view(), name='create_studyset'),
     path('upload/', views.UploadDocument.as_view(), name='upload_document'),
+
+    path('choose-pages/<int:pk>', views.ChoosePagesFromPDF.as_view(), name='choose_pages_from_pdf'),
 ]

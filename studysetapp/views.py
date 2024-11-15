@@ -1,10 +1,11 @@
+from django.http import Http404
+from rest_framework.exceptions import NotFound
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_201_CREATED
 from rest_framework.response import Response
 from rest_framework import generics
-from .models import StudySet
-from .serializers import StudySetSerializer, DocumentSerializer
-from flashcardapp.serializers import GeneratedFlashcardSerializer
-from .generate_flashcards_with_ai import generate_data_for_flashcards, populate_flashcards
+
+from .models import Document
+from .serializers import StudySetSerializer, DocumentSerializer, ChoosePagesFromPDFSerializer
 # Create your views here.
 
 class CreateStudySet(generics.CreateAPIView):
@@ -54,8 +55,41 @@ class UploadDocument(generics.CreateAPIView):
                 'errors': serializer.errors
             }, status=HTTP_400_BAD_REQUEST)
 
-class ChoosePagesFromPDF(generics.GenericAPIView):
-    pass
+class ChoosePagesFromPDF(generics.RetrieveUpdateAPIView):
+    serializer_class = ChoosePagesFromPDFSerializer
+    lookup_field = 'pk'
+    queryset = Document.objects.all()
+
+    def get_object(self):
+        try:
+            return super().get_object()
+        except Http404:
+            raise NotFound({"detail": "No Document found with ID {0}".format(self.kwargs.get('pk'))})
+
+    def perform_update(self, serializer):
+        selected_pages = serializer.validated_data.get('selected_pages')
+        serializer.save(selected_pages=selected_pages)
+
+    def update(self, request, *args, **kwargs):
+        document = self.get_object()
+
+        # partial=True allows for partial updates
+        serializer = self.get_serializer(document, data=request.data, partial=True)
+        if serializer.is_valid():
+            self.perform_update(serializer)
+            return Response({
+                'message': 'Document updated successfully.',
+                'data': serializer.data,
+                'status': HTTP_200_OK
+            }, status=HTTP_200_OK)
+        else:
+            return Response({
+                'message': 'Document could not be updated, please try again.',
+                'errors': serializer.errors,
+                'status': HTTP_400_BAD_REQUEST
+            }, status=HTTP_400_BAD_REQUEST)
+
+
 
 class ExtractTextFromPDF(generics.GenericAPIView):
     pass
