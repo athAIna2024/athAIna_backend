@@ -32,7 +32,7 @@ def create_new_pdf_for_selected_pages(file_name, page_numbers):
     return output_path
 
 def extract_data_from_pdf(file_name, page_numbers): # Docling more advanced than PyMuPDF
-    fs = FileSystemStorage(location=settings.MEDIA_ROOT / 'documents')
+    fs = FileSystemStorage(location=settings.MEDIA_ROOT) # removed / 'documents' (you can add it for debugging)
     pdf_path = fs.path(file_name + "_selected_pages.pdf")
 
     if not os.path.exists(pdf_path):
@@ -51,7 +51,7 @@ def extract_data_from_pdf(file_name, page_numbers): # Docling more advanced than
 
 
 def convert_pdf_to_images(file_name):
-    fs = FileSystemStorage(location=settings.MEDIA_ROOT / 'documents')
+    fs = FileSystemStorage(location=settings.MEDIA_ROOT) # removed / 'documents' (you can add it for debugging)
     pdf_path = fs.path(file_name)
 
     if not os.path.exists(pdf_path):
