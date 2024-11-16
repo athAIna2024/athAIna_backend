@@ -13,3 +13,4 @@ reportapp/migrations
 testapp/migrations
 studysetapp/migrations
 templates
+data.sql

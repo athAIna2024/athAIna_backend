@@ -1,6 +1,13 @@
 # Use the latest Python image from the Docker Hub
 FROM python:3.12-alpine
 
+# Install system dependencies
+RUN apk update && apk add --no-cache \
+    gcc \
+    musl-dev \
+    mariadb-dev \
+    pkgconfig
+
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
@@ -12,7 +19,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY entrypoint.sh ./
 RUN chmod +x entrypoint.sh
-
 
 # Copy the whole project into the container
 COPY . ./

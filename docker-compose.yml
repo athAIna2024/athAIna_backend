@@ -1,8 +1,17 @@
 services:
   redis:
+    container_name: redis_server
     image: redis:7.4.1-alpine
+    ports:
+      - 6379:6379
+    env_file:
+      - .env
+    deploy:
+      resources:
+        limits:
+          memory: 256M
   django:
-    container_name: django
+    container_name: django_website
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -15,8 +24,12 @@ services:
       - .env
     depends_on:
       - redis
+    deploy:
+      resources:
+        limits:
+          memory: 512M
   celery:
-    container_name: celery
+    container_name: celery_worker
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -29,19 +42,21 @@ services:
       - .env
     depends_on:
       - redis
+    deploy:
+      resources:
+        limits:
+          memory: 512M
   db:
-    image: mysql
-    environment:
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    container_name: mysql_database
+    image: mysql:9.1.0
     ports:
-      - "${DB_PORT}:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
+      - 3307:3306
     env_file:
       - .env
-
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql_data:/var/lib/mysql
 volumes:
   mysql_data:
+    

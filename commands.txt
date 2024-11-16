@@ -11,12 +11,17 @@ docker rmi $(docker images -aq)
 docker volume prune -f
 - this both commands will remove all images and volumes
 
-docker exec -it <container_name> //bin//sh
-- allows you to run commands in the container
+docker exec -it <container_name> /bin/sh
+FOR PYTHON:
 python3 manage.py startapp <app_name>
 - through container (and allows you to create it locally)
 exit
 - to exit the container
+FOR MYSQL_DATABASE:
+
+mysql -u root -p
+- enter root password
+
 
 Under docker terminal seen in Docker Desktop, you can run the following commands:
 wmic logicaldisk get size,freespace,caption

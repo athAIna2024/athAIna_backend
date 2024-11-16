@@ -84,7 +84,7 @@ WSGI_APPLICATION = 'athAIna_backend.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 
-DATABASE = {
+DATABASES = {
     'default': {
         'ENGINE': env('DB_ENGINE'),
         'NAME': env('DB_NAME'),
@@ -94,6 +94,7 @@ DATABASE = {
         'PORT': env('DB_PORT'),
     }
 }
+
 
 AUTH_USER_MODEL = 'accountapp.User'
 
