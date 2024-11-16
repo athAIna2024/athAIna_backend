@@ -3,6 +3,11 @@ from django.http import Http404
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework import generics
+from rest_framework.views import APIView
+from rest_framework import status
+from django.db.models import Q
+
+
 from .models import StudySet
 from .serializers import StudySetSerializer
 from .paginators import StandardPaginationStudySets
@@ -90,6 +95,30 @@ class UpdateStudySet(generics.RetrieveUpdateAPIView):
                 'message': 'Study Set could not be updated, please try again.',
                 'errors': serializer.errors
             }, status=HTTP_400_BAD_REQUEST)
+
+
+class StudySetSearchView(APIView):
+    def get(self, request, *args, **kwargs):
+        query = request.query_params.get('q', '')
+
+        if query:
+            study_sets = StudySet.objects.filter(
+                Q(title__icontains=query) | Q(description__icontains=query)
+            )
+            serializer = StudySetSerializer(study_sets, many=True)
+            return Response(serializer.data)
+
+        return Response({"message": "No query provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudySetFilterBySubjectView(generics.ListAPIView):
+    serializer_class = StudySetSerializer
+
+    def get_queryset(self):
+        subject = self.request.query_params.get('subject')
+        if subject:
+            return StudySet.objects.filter(subjects=subject).order_by('created_at')
+        return StudySet.objects.none()
 
 # class DeleteStudySet(generics.RetrieveDestroyAPIView):
 #     queryset = StudySet.objects.all()
