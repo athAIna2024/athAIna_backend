@@ -1,0 +1,25 @@
+docker-compose up -d --build
+- d means detached mode which is running the container in the background
+- --build means to build the container
+docker images
+- to check the images (containers)
+docker rmi <image_id>
+- to remove the image
+docker volume prune -f
+- to remove all unused volumes
+docker rmi $(docker images -aq)
+docker volume prune -f
+- this both commands will remove all images and volumes
+
+docker exec -it <container_name> //bin//sh
+- allows you to run commands in the container
+python3 manage.py startapp <app_name>
+- through container (and allows you to create it locally)
+exit
+- to exit the container
+
+Under docker terminal seen in Docker Desktop, you can run the following commands:
+wmic logicaldisk get size,freespace,caption
+- to check disk space in Windows OS
+cleanmgr
+- to clean up disk space
