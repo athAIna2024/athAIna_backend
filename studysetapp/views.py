@@ -109,7 +109,7 @@ class ChoosePagesFromPDF(generics.RetrieveUpdateAPIView):
             images = convert_pdf_to_images(file_name)
             encoded_images = [
                 {
-                    'id': page_num,
+                    'id': page_num + 1,
                     'image': base64.b64encode(image.tobytes()).decode('utf-8')
                 }
                 for page_num, image in enumerate(images)
@@ -133,7 +133,7 @@ class ChoosePagesFromPDF(generics.RetrieveUpdateAPIView):
         selected_pages = serializer.validated_data.get('selected_pages')
         serializer.save(selected_pages=selected_pages)
 
-    def update(self, request, *args, **kwargs):
+    def partial_update(self, request, *args, **kwargs):
         document = self.get_object()
 
         # partial=True allows for partial updates
