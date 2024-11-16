@@ -9,8 +9,7 @@ urlpatterns = [
 
     # path('delete/<int:id>/', views.DeleteStudySet.as_view(), name='delete_StudySet'),
 
-   # path('flashcard-search/', views.FlashcardSearchView.as_view(), name='flashcard-search'),
-    path('studyset-search/', views.StudySetSearchView.as_view(), name='studyset-search'),
+    path('studyset_search/', views.StudySetSearchView.as_view(), name='studyset-search'),
 
     path('filter_by_subject/', views.StudySetFilterBySubjectView.as_view(), name='filter_by_subject'),
 

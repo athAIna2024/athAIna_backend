@@ -115,10 +115,12 @@ class StudySetFilterBySubjectView(generics.ListAPIView):
     serializer_class = StudySetSerializer
 
     def get_queryset(self):
-        subject = self.request.query_params.get('subject')
+        subject = self.request.query_params.get('q', '')
         if subject:
             return StudySet.objects.filter(subjects=subject).order_by('created_at')
         return StudySet.objects.none()
+
+
 
 # class DeleteStudySet(generics.RetrieveDestroyAPIView):
 #     queryset = StudySet.objects.all()
