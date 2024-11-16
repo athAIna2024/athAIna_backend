@@ -46,8 +46,28 @@ class FlashcardSerializer(serializers.ModelSerializer):
 
 class GeneratedFlashcardSerializer(serializers.ModelSerializer):
 
+    question = serializers.CharField(
+        max_length=300,
+        required=True,
+        allow_blank=False,
+        error_messages={
+            'required': 'Please provide a question',
+            'blank': 'Please provide a question',
+            'max_length': 'Please keep the question under 300 characters.'
+        })
+
+    answer = serializers.CharField(
+        max_length=100,
+        required=True,
+        allow_blank=False,
+        error_messages={
+            'required': 'Please provide an answer',
+            'blank': 'Please provide an answer',
+            'max_length': 'Please keep the answer under 100 characters.'
+        })
     is_ai_generated = serializers.BooleanField(default=True)
     class Meta:
         model = Flashcard
         fields = ['question', 'answer', 'image', 'studyset_instance', 'created_at', 'updated_at']
         read_only_fields = ['image', 'created_at', 'updated_at', 'is_ai_generated', 'deleted_at', 'restored_at', 'transaction_id']
+
