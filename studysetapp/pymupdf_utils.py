@@ -7,33 +7,51 @@ from django.conf import settings
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'athAIna_backend.settings')
 django.setup()
 
-def create_new_pdf_for_selected_pages(file_name, page_numbers):
-    fs = FileSystemStorage(location=settings.MEDIA_ROOT / 'documents')
-    pdf_path = fs.path(file_name)
+# def create_new_pdf_for_selected_pages(file_name, page_numbers):
+#     fs = FileSystemStorage(location=settings.MEDIA_ROOT / 'documents')
+#     pdf_path = fs.path(file_name)
+#
+#     if not os.path.exists(pdf_path):
+#         raise FileNotFoundError(f"File not found: {pdf_path}")
+#
+#     try:
+#         doc = fitz.open(pdf_path)
+#         output_doc = fitz.open()
+#
+#         for page_num in page_numbers:
+#             if 0 < page_num <= len(doc):
+#                 output_doc.insert_pdf(doc, from_page=page_num - 1, to_page=page_num - 1)
+#
+#         output_path = pdf_path.replace('.pdf', '_selected_pages.pdf')
+#         output_doc.save(output_path)
+#         output_doc.close()
+#     except FileNotFoundError as e:
+#         raise FileNotFoundError(f"File not found: {pdf_path}")
+#     except Exception as e:
+#         raise RuntimeError(f"An unexpected error occurred: {e}")
+#     return output_path
 
-    if not os.path.exists(pdf_path):
-        raise FileNotFoundError(f"File not found: {pdf_path}")
+# def extract_data_from_pdf(file_name, page_numbers): # Docling more advanced than PyMuPDF
+#     fs = FileSystemStorage(location=settings.MEDIA_ROOT) # removed / 'documents' (you can add it for debugging)
+#     pdf_path = fs.path(file_name + "_selected_pages.pdf")
+#
+#     if not os.path.exists(pdf_path):
+#         raise FileNotFoundError(f"File not found: {file_name}")
+#
+#     try:
+#         doc = fitz.open(pdf_path)
+#         text = ""
+#         for page_num in page_numbers:
+#             if 0 < page_num <= len(doc):
+#                 page = doc.load_page(page_num - 1)
+#                 text += page.get_text()
+#         return text
+#     except Exception as e:
+#         raise RuntimeError(f"Failed to extract text from document: {e}")
 
-    try:
-        doc = fitz.open(pdf_path)
-        output_doc = fitz.open()
-
-        for page_num in page_numbers:
-            if 0 < page_num <= len(doc):
-                output_doc.insert_pdf(doc, from_page=page_num - 1, to_page=page_num - 1)
-
-        output_path = pdf_path.replace('.pdf', '_selected_pages.pdf')
-        output_doc.save(output_path)
-        output_doc.close()
-    except FileNotFoundError as e:
-        raise FileNotFoundError(f"File not found: {pdf_path}")
-    except Exception as e:
-        raise RuntimeError(f"An unexpected error occurred: {e}")
-    return output_path
-
-def extract_data_from_pdf(file_name, page_numbers): # Docling more advanced than PyMuPDF
+def extract_data_from_pdf(file_name, page_number):
     fs = FileSystemStorage(location=settings.MEDIA_ROOT) # removed / 'documents' (you can add it for debugging)
-    pdf_path = fs.path(file_name + "_selected_pages.pdf")
+    pdf_path = fs.path(file_name)
 
     if not os.path.exists(pdf_path):
         raise FileNotFoundError(f"File not found: {file_name}")
@@ -41,14 +59,14 @@ def extract_data_from_pdf(file_name, page_numbers): # Docling more advanced than
     try:
         doc = fitz.open(pdf_path)
         text = ""
-        for page_num in page_numbers:
-            if 0 < page_num <= len(doc):
-                page = doc.load_page(page_num - 1)
-                text += page.get_text()
+        page = doc.load_page(page_number - 1)
+        text += page.get_text()
         return text
     except Exception as e:
         raise RuntimeError(f"Failed to extract text from document: {e}")
 
+#For debugging
+# print(extract_data_from_pdf("documents/Networking_Module_8_to_10_4eQchqC.pdf", 1))
 
 def convert_pdf_to_images(file_name):
     fs = FileSystemStorage(location=settings.MEDIA_ROOT) # removed / 'documents' (you can add it for debugging)
