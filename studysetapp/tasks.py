@@ -8,33 +8,22 @@ import os
 import fitz  # PyMuPDF
 import base64
 @shared_task
-def extract_data_from_pdf(file_name, page_number):
+def extract_data_from_pdf_task(file_name, page_numbers=[]):
     fs = FileSystemStorage(location=settings.MEDIA_ROOT)
     pdf_path = fs.path(file_name)
-    try:
-        if not os.path.exists(pdf_path):
-            raise FileNotFoundError(f"File not found: {file_name}")
+    # try:
+    if not os.path.exists(pdf_path):
+        raise FileNotFoundError(f"File not found: {file_name}")
 
-        doc = fitz.open(pdf_path)
-        page = doc.load_page(page_number - 1)
-        text = page.get_text()
-        return text
-    except Exception as e:
-        raise RuntimeError(f"Failed to extract text from document: {e}")
-
-@shared_task
-def extract_data_from_pdf_task(file_name, page_numbers=[]):
-    try:
-        page_numbers = [int(page_number) for page_number in page_numbers]
-
-        tasks = [extract_data_from_pdf.s(file_name, page_number) for page_number in page_numbers]
-        task_group = group(tasks)
-        results = task_group.apply_async().get()
-
-        text = "".join(result for result in results if isinstance(result, str))
-        return text
-    except Exception as e:
-        raise RuntimeError(f"Failed to extract data from PDF: {e}")
+    doc = fitz.open(pdf_path)
+    text = ""
+    for page_num in page_numbers:
+        if 0 < page_num <= len(doc):
+            page = doc.load_page(page_num - 1)
+            text += page.get_text()
+    return text
+    # except Exception as e:
+    #     raise RuntimeError(f"Failed to extract text from document: {e}")
 
 @shared_task
 def convert_pdf_to_images_task(file_name):

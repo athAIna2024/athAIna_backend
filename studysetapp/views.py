@@ -7,7 +7,9 @@ from .models import Document
 from .serializers import StudySetSerializer, DocumentSerializer, ChoosePagesFromPDFSerializer
 import base64
 from .pymupdf_utils import convert_pdf_to_images
-from .tasks import convert_pdf_to_images_task
+from .tasks import convert_pdf_to_images_task, extract_data_from_pdf_task
+from celery import group
+import json
 
 # Create your views here.
 
@@ -124,11 +126,44 @@ class DisplayPDFImages(generics.RetrieveAPIView):
                 'status': HTTP_400_BAD_REQUEST
             }, status=HTTP_400_BAD_REQUEST)
 
-class CheckStatusForPDFToImageConversion(generics.RetrieveAPIView):
-    pass
-
 class ExtractTextFromPDF(generics.RetrieveAPIView):
-    pass
+    lookup_field = 'pk'
+    queryset = Document.objects.all()
+    serializer_class = ChoosePagesFromPDFSerializer
+
+    def get_object(self):
+        try:
+            return super().get_object()
+        except Http404:
+            raise NotFound({"detail": "No Document found with ID {0}".format(self.kwargs.get('pk'))})
+
+    def retrieve(self, request, *args, **kwargs):
+        document = self.get_object()
+        file_name = document.document.name
+        selected_pages = document.selected_pages
+
+        # Ensure selected_pages is a list of integers
+        if isinstance(selected_pages, str):
+            selected_pages = json.loads(selected_pages)
+        page_numbers = [int(page_number) for page_number in selected_pages]
+
+        try:
+            text = extract_data_from_pdf_task.apply_async(args=(file_name, page_numbers))
+            return Response({
+                'message': 'Text extracted successfully.',
+                'text':  text.get(), # If get() is outside, it may not return the result
+                'status': HTTP_200_OK
+            }, status=HTTP_200_OK)
+        except FileNotFoundError:
+            return Response({
+                'message': 'File not found.',
+                'status': HTTP_400_BAD_REQUEST
+            }, status=HTTP_400_BAD_REQUEST)
+        except RuntimeError:
+            return Response({
+                'message': 'Failed to extract text from PDF.',
+                'status': HTTP_400_BAD_REQUEST
+            }, status=HTTP_400_BAD_REQUEST)
 
 class GenerateFlashcards(generics.CreateAPIView):
     pass
