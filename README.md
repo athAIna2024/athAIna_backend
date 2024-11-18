@@ -30,5 +30,8 @@ To install Docker Desktop on Windows,
     - provide a username and password for the Linux subsystem
     - then hush login to the Linux subsystem by running the following command:
     - touch ~/.hushlogin
+    - sudo apt-get update
+    - sudo-apt get install mysql-server
+    - sudo service mysql start
 2. Install Docker Desktop from the official website.
  
