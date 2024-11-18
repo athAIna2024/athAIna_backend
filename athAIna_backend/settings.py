@@ -179,10 +179,10 @@ CELERY_CONFIG = {
 
 CACHES = {
     "default": {
-        "BACKEND": env('REDIS_BACKEND'),
+        "BACKEND": 'django_redis.cache.RedisCache',
         "LOCATION": env('REDIS_URL'),
         "OPTIONS": {
-            "CLIENT_CLASS": env('REDIS_OPTIONS')
+            "CLIENT_CLASS": 'django_redis.client.DefaultClient',
         }
     }
 }
