@@ -148,10 +148,11 @@ class ExtractTextFromPDF(generics.RetrieveAPIView):
         page_numbers = [int(page_number) for page_number in selected_pages]
 
         try:
-            text = extract_data_from_pdf_task.apply_async(args=(file_name, page_numbers))
+            result = extract_data_from_pdf_task.apply_async(args=(file_name, page_numbers))
+            text = result.get()
             return Response({
                 'message': 'Text extracted successfully.',
-                'text':  text.get(), # If get() is outside, it may not return the result
+                'text':  text,
                 'status': HTTP_200_OK
             }, status=HTTP_200_OK)
         except FileNotFoundError:
