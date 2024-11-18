@@ -11,8 +11,6 @@ import base64
 def extract_data_from_pdf(file_name, page_number):
     fs = FileSystemStorage(location=settings.MEDIA_ROOT)
     pdf_path = fs.path(file_name)
-
-    response = {}
     try:
         if not os.path.exists(pdf_path):
             raise FileNotFoundError(f"File not found: {file_name}")
@@ -20,20 +18,12 @@ def extract_data_from_pdf(file_name, page_number):
         doc = fitz.open(pdf_path)
         page = doc.load_page(page_number - 1)
         text = page.get_text()
-        response['text'] = text
-        response['status'] = 'success'
-    except FileNotFoundError as fnf_error:
-        response['error'] = str(fnf_error)
-        response['status'] = 'failure'
+        return text
     except Exception as e:
-        response['error'] = "Failed to extract text from pdf page: " + str(e)
-        response['status'] = 'failure'
-
-    return response
+        raise RuntimeError(f"Failed to extract text from document: {e}")
 
 @shared_task
 def extract_data_from_pdf_task(file_name, page_numbers=[]):
-    response = {}
     try:
         page_numbers = [int(page_number) for page_number in page_numbers]
 
@@ -42,44 +32,24 @@ def extract_data_from_pdf_task(file_name, page_numbers=[]):
         results = task_group.apply_async().get()
 
         text = "".join(result for result in results if isinstance(result, str))
-        response['text'] = text
-        response['status'] = 'success'
-        return response
+        return text
     except Exception as e:
-        response['error'] = "Failed to extract text from document: " + str(e)
-        response['status'] = 'failure'
-        return response
+        raise RuntimeError(f"Failed to extract data from PDF: {e}")
 
 @shared_task
-def convert_pdf_to_images(file_name, page_number):
+def convert_pdf_to_images_task(file_name):
     fs = FileSystemStorage(location=settings.MEDIA_ROOT)
     pdf_path = fs.path(file_name)
 
     try:
         doc = fitz.open(pdf_path)
-        page = doc.load_page(page_number - 1)
-        pix = page.get_pixmap()
-
-        img_base64 = base64.b64encode(pix.tobytes()).decode('utf-8')
-        return img_base64
-
-    except Exception as e:
-        raise RuntimeError(f"Failed to convert PDF page to image: {e}")
-
-@shared_task
-def convert_pdf_to_images_task(file_name, page_numbers=[]):
-    try:
-        page_numbers = [int(page_number) for page_number in page_numbers]
-
-        tasks = [convert_pdf_to_images.s(file_name, page_number) for page_number in page_numbers]
-        task_group = group(tasks)
-        results = task_group.apply_async().get()
-
         images = []
-        for result in results:
-            if isinstance(result, str):
-                images.append(result)
-        return results
+        for page_num in range(len(doc)):
+            page = doc.load_page(page_num)
+            pix = page.get_pixmap()
+            img_base64 = base64.b64encode(pix.tobytes()).decode('utf-8')
+            images.append(img_base64)
+        return images
     except Exception as e:
         raise RuntimeError(f"Failed to convert PDF to images: {e}")
 
