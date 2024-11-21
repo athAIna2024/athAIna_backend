@@ -3,14 +3,14 @@
 .venv/
 .env
 
-pycache
-media\documents
-media\flashcard_images
+__pycache__
+media
+athAIna_backend/
 db.sqlite3
-accountapp\migrations
-contactinquiryapp\migrations
-flashcardapp\migrations
-reportapp\migrations
-testapp\migrations
-studysetapp\migrations
+accountapp/migrations
+contactinquiryapp/migrations
+flashcardapp/migrations
+reportapp/migrations
+testapp/migrations
+studysetapp/migrations
 templates

@@ -9,6 +9,8 @@ To install imports, run the following command ensure that you are in the venv:
 
 pip install -r requirements.txt
 
+pip freeze > requirements.txt (for Docker)
+
 
 To generate key, run the following command ensure that you are in the venv:
 

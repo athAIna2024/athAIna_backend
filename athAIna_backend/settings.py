@@ -161,8 +161,8 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media/'
+MEDIA_URL = env("MEDIA_URL_LOCAL")
+MEDIA_ROOT = BASE_DIR / env("MEDIA_ROOT_LOCAL")
 
 # CORS
 CORS_ORIGIN_WHITELIST = env.list('CORS_ORIGIN_WHITELIST', default=[])
