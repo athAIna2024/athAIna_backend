@@ -1,9 +1,16 @@
 # created by virtualenv automatically
+.idea
 .venv/
 .env
-settings.py
+
+pycache
+media\documents
+media\flashcard_images
 db.sqlite3
-migration files
-_pycache_
-.idea
-.pyc
+accountapp\migrations
+contactinquiryapp\migrations
+flashcardapp\migrations
+reportapp\migrations
+testapp\migrations
+studysetapp\migrations
+templates
