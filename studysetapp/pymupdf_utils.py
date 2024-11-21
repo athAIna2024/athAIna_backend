@@ -1,6 +1,8 @@
 import os
 import django
 import fitz  # PyMuPDF
+import base64
+
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 
@@ -49,31 +51,30 @@ django.setup()
 #     except Exception as e:
 #         raise RuntimeError(f"Failed to extract text from document: {e}")
 
-def extract_data_from_pdf(file_name, page_number):
-    fs = FileSystemStorage(location=settings.MEDIA_ROOT) # removed / 'documents' (you can add it for debugging)
+def extract_data_from_pdf(file_name, page_numbers=[]):
+    fs = FileSystemStorage(location=settings.MEDIA_ROOT)
     pdf_path = fs.path(file_name)
-
-    if not os.path.exists(pdf_path):
-        raise FileNotFoundError(f"File not found: {file_name}")
-
     try:
+        if not os.path.exists(pdf_path):
+            raise FileNotFoundError(f"File not found: {file_name}")
+
         doc = fitz.open(pdf_path)
         text = ""
-        page = doc.load_page(page_number - 1)
-        text += page.get_text()
+        for page_num in page_numbers:
+            if 0 < page_num <= len(doc):
+                page = doc.load_page(page_num - 1)
+                text += page.get_text()
         return text
     except Exception as e:
         raise RuntimeError(f"Failed to extract text from document: {e}")
+
 
 #For debugging
 # print(extract_data_from_pdf("documents/Networking_Module_8_to_10_4eQchqC.pdf", 1))
 
 def convert_pdf_to_images(file_name):
-    fs = FileSystemStorage(location=settings.MEDIA_ROOT) # removed / 'documents' (you can add it for debugging)
+    fs = FileSystemStorage(location=settings.MEDIA_ROOT)
     pdf_path = fs.path(file_name)
-
-    if not os.path.exists(pdf_path):
-        raise FileNotFoundError(f"File not found: {file_name}")
 
     try:
         doc = fitz.open(pdf_path)
@@ -81,10 +82,10 @@ def convert_pdf_to_images(file_name):
         for page_num in range(len(doc)):
             page = doc.load_page(page_num)
             pix = page.get_pixmap()
-            images.append(pix)
+            img_base64 = base64.b64encode(pix.tobytes()).decode('utf-8')
+            images.append(img_base64)
         return images
     except Exception as e:
         raise RuntimeError(f"Failed to convert PDF to images: {e}")
-
 
 

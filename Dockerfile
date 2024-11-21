@@ -11,19 +11,17 @@ RUN apk update && apk add --no-cache \
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
-# Copy the requirements file into the container
-COPY requirements.txt ./
+# Copy the requirements file and entrypoint script into the container
+COPY requirements.txt entrypoint.sh ./
 
 # Install the dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY entrypoint.sh ./
-RUN chmod +x entrypoint.sh
+# Set the correct permissions for the entrypoint script
+#RUN chmod +x entrypoint.sh
 
 # Copy the whole project into the container
-COPY . ./
-
-ENTRYPOINT ["./entrypoint.sh"]
+#COPY . ./
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -31,6 +29,9 @@ ENV PYTHONUNBUFFERED 1
 
 # Expose the port the app runs on
 EXPOSE 8000
+
+# Set the entrypoint
+#ENTRYPOINT ["./entrypoint.sh"]
 
 # Run the Django development server
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

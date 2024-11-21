@@ -7,5 +7,7 @@ urlpatterns = [
     path('upload/', views.UploadDocument.as_view(), name='upload_document'),
     path('extract-text-from-selected-pages/<int:pk>/', views.ExtractTextFromPDF.as_view(), name='extract_text_from_selected_pages'),
     path('choose-pages/<int:pk>/', views.ChoosePagesFromPDF.as_view(), name='choose_pages_from_pdf'),
-    path('display-pdf-images/<int:pk>/', views.DisplayPDFImages.as_view(), name='display_pdf_images'),
+    path('display-pdf-images/', views.DisplayPDFImages.as_view(), name='display_pdf_images'),
+    path('generate-flashcards/<int:pk>/', views.GenerateFlashcard.as_view(), name='generate_flashcards'),
+
 ]

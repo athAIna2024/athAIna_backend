@@ -5,10 +5,9 @@ from rest_framework.response import Response
 from rest_framework import generics
 from .models import Document
 from .serializers import StudySetSerializer, DocumentSerializer, ChoosePagesFromPDFSerializer
-import base64
-from .pymupdf_utils import convert_pdf_to_images
-from .tasks import convert_pdf_to_images_task, extract_data_from_pdf_task
-from celery import group
+from flashcardapp.models import Flashcard
+from flashcardapp.serializers import GeneratedFlashcardSerializer
+from .tasks import convert_pdf_to_images_task, extract_data_from_pdf_task, generate_flashcards_task, clean_data_for_flashcard_creation_task
 import json
 
 # Create your views here.
@@ -95,17 +94,19 @@ class ChoosePagesFromPDF(generics.UpdateAPIView):
             }, status=HTTP_400_BAD_REQUEST)
 
 class DisplayPDFImages(generics.RetrieveAPIView):
-    lookup_field = 'pk'
     queryset = Document.objects.all()
     serializer_class = ChoosePagesFromPDFSerializer
 
     def get_object(self):
+        pk = self.request.query_params.get('id')
+        if not pk:
+            raise NotFound({"detail": "No Document ID provided in query parameters."})
         try:
-            return super().get_object()
-        except Http404:
-            raise NotFound({"detail": "No Document found with ID {0}".format(self.kwargs.get('pk'))})
+            return self.queryset.get(pk=pk)
+        except Document.DoesNotExist:
+            raise NotFound({"detail": f"No Document found with ID {pk}"})
 
-    def retrieve(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         document = self.get_object()
         file_name = document.document.name
         try:
@@ -137,10 +138,10 @@ class ExtractTextFromPDF(generics.RetrieveAPIView):
         except Http404:
             raise NotFound({"detail": "No Document found with ID {0}".format(self.kwargs.get('pk'))})
 
-    def retrieve(self, request, *args, **kwargs):
-        document = self.get_object()
-        file_name = document.document.name
-        selected_pages = document.selected_pages
+    def get(self, request, *args, **kwargs):
+        document_instance = self.get_object()
+        file_name = document_instance.document.name
+        selected_pages = document_instance.selected_pages
 
         # Ensure selected_pages is a list of integers
         if isinstance(selected_pages, str):
@@ -166,8 +167,43 @@ class ExtractTextFromPDF(generics.RetrieveAPIView):
                 'status': HTTP_400_BAD_REQUEST
             }, status=HTTP_400_BAD_REQUEST)
 
-class GenerateFlashcards(generics.CreateAPIView):
-    pass
+class GenerateFlashcard(generics.GenericAPIView):
+    serializer_class = GeneratedFlashcardSerializer
+    lookup_field = 'pk'
+    queryset = Document.objects.all()
 
-class CheckStatusForFlashcardGeneration(generics.RetrieveAPIView):
-    pass
+    def post(self, request, *args, **kwargs):
+        document = self.get_object()
+
+        file_name = document.document.name
+        selected_pages = document.selected_pages
+
+        if isinstance(selected_pages, str):
+            selected_pages = json.loads(selected_pages)
+        page_numbers = [int(page_number) for page_number in selected_pages]
+
+        studyset_id = document.studyset_instance_id
+
+        task1 = extract_data_from_pdf_task.apply_async(args=(file_name, page_numbers))
+        extracted_data = task1.get()
+        task2 = generate_flashcards_task.apply_async(args=(extracted_data, studyset_id))
+        flashcard_data = task2.get()
+        task3 = clean_data_for_flashcard_creation_task.apply_async(args=(flashcard_data, studyset_id))
+        flashcard_data = task3.get()
+
+        return self.save_flashcards(flashcard_data)
+
+    def save_flashcards(self, flashcard_data):
+        serializer = self.get_serializer(data=flashcard_data, many=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'message': 'Flashcards generated successfully.',
+                'data': serializer.data,
+                'status': HTTP_201_CREATED
+            }, status=HTTP_201_CREATED)
+        return Response({
+            'message': 'Flashcards could not be generated, please try again.',
+            'errors': serializer.errors,
+            'status': HTTP_400_BAD_REQUEST
+        }, status=HTTP_400_BAD_REQUEST)
