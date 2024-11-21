@@ -3,7 +3,7 @@
 .venv/
 .env
 
-__pycache__
+__pycache__/
 media\documents
 media\flashcard_images
 db.sqlite3
