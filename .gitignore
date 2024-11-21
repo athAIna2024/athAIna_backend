@@ -14,3 +14,4 @@ reportapp/migrations
 testapp/migrations
 studysetapp/migrations
 templates
+db.sqlite3

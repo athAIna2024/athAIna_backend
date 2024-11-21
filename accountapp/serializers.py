@@ -96,10 +96,7 @@ class PasswordResetRequestSerializer(serializers.Serializer):
             uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
             token = PasswordResetTokenGenerator().make_token(user)
             request = self.context.get('request')
-            current_site = get_current_site(request).domain
-            relative_link = reverse('reset-password-confirm', kwargs={'uidb64': uidb64, 'token': token})
-            abslink = f"http://{current_site}{relative_link}"
-            email_body = f"Please use the link below to reset your password {abslink}\nYour OTP code is {otp_code.code}"
+            email_body = f"Your OTP code is {otp_code.code} \\n Use this link to verify http://localhost:8000/account/verify-password-change-otp/"
             data = {
                 'email_body': email_body,
                 'email_subject': "Reset your Password",
