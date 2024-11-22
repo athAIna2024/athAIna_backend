@@ -7,7 +7,6 @@ from docling.pipeline.standard_pdf_pipeline import StandardPdfPipeline
 from docling.backend.pypdfium2_backend import PyPdfiumDocumentBackend
 from docling.models.tesseract_ocr_model import TesseractOcrOptions
 
-
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 from pathlib import Path
@@ -43,11 +42,18 @@ doc_converter = DocumentConverter(
 
 def extract_data_from_document(file_name):
     fs = FileSystemStorage(location=settings.MEDIA_ROOT / 'documents')
-    file_path = fs.path(file_name)
+    file_path = fs.path(file_name + "_selected_pages.pdf")
 
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
-    converted_results = doc_converter.convert(Path(file_path))
-    return converted_results.document.export_to_markdown()
+        raise FileNotFoundError(f"File not found", file_name)
 
-print(extract_data_from_document('Networking_Module_8_to_10.pdf'))
+    try:
+        converted_results = doc_converter.convert(Path(file_path))
+        return converted_results.document.export_to_markdown()
+    except Exception as e:
+        # Handle specific exceptions if needed, e.g., connection errors
+        raise RuntimeError(f"Failed to extract text from document with docling: {file_name}")
+    except ConnectionRefusedError as e:
+        raise ConnectionRefusedError(f"Connection refused by docling service: {e}")
+    except ConnectionError as e:
+        raise ConnectionError(f"Connection error with Django server: {e}")

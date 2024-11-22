@@ -1,15 +1,23 @@
+from django.contrib.sites.shortcuts import get_current_site
+from django.urls import reverse
+from django.utils import timezone
+
 from django.shortcuts import render
-from rest_framework.generics import GenericAPIView
+from google.protobuf.proto_json import serialize
+from marko.patterns import email
+from rest_framework.generics import GenericAPIView, UpdateAPIView, DestroyAPIView
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from accountapp.models import OneTimePassword, User
-from accountapp.serializers import UserRegistrationSerializer, VerifyUserEmailSerializer, LoginSerializer, SetNewPasswordSerializer,\
-    PasswordResetRequestSerializer
+from accountapp.serializers import UserRegistrationSerializer, VerifyUserEmailSerializer, LoginSerializer, \
+    SetNewPasswordSerializer, \
+    PasswordResetRequestSerializer, LogoutUserSerialezer, ChangePasswordSerializer, ChangePasswordRequestSerializer
 from accountapp.utils import send_code_to_user
 from rest_framework.response import Response
-from django.utils.http import urlsafe_base64_decode
-from django.utils.encoding import smart_str, DjangoUnicodeDecodeError
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils.encoding import smart_str, DjangoUnicodeDecodeError, smart_bytes
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
 
@@ -82,30 +90,211 @@ class PasswordResetRequestView(GenericAPIView):
         }, status=status.HTTP_200_OK)
 
 class PasswordResetConfirm(GenericAPIView):
-    def get(self, request, uidb64, token):
+    serializer_class = SetNewPasswordSerializer
+
+    def post(self, request, uidb64, token):
+        otp_code = request.data.get('otp')
         try:
-            user_id=smart_str(urlsafe_base64_decode(uidb64))
-            user=User.objects.get(id=user_id)
+            user_id = smart_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(id=user_id)
             if not PasswordResetTokenGenerator().check_token(user, token):
                 return Response({
-                    "msg": "Token is not valid, please request a new one"}, status=status.HTTP_401_UNAUTHORIZED)
+                    "msg": "Token is not valid, please request a new one"
+                }, status=status.HTTP_401_UNAUTHORIZED)
+            otp_obj = OneTimePassword.objects.get(code=otp_code)
+            if otp_obj.user != user:
+                return Response({
+                    "msg": "Invalid OTP"
+                }, status=status.HTTP_400_BAD_REQUEST)
             return Response({
                 "success": True,
                 "msg": "Credentials Valid",
                 "uidb64": uidb64,
-                "token": token
+                "token": token,
+                "otp": otp_code
             }, status=status.HTTP_200_OK)
-
-        except DjangoUnicodeDecodeError:
+        except (OneTimePassword.DoesNotExist, DjangoUnicodeDecodeError, User.DoesNotExist):
             return Response({
-                "msg": "Token is not valid or expired, please request a new one"}, status=status.HTTP_401_UNAUTHORIZED)
+                "msg": "Invalid OTP or token"
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 class SetNewPassword(GenericAPIView):
     serializer_class = SetNewPasswordSerializer
+
+    def patch(self, request, uidb64, token):
+        try:
+            user_id = smart_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(id=user_id)
+            if not PasswordResetTokenGenerator().check_token(user, token):
+                return Response({
+                    "message": "Token is not valid, please request a new one"
+                }, status=status.HTTP_401_UNAUTHORIZED)
+            serializer = self.serializer_class(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            user.set_password(serializer.validated_data['password'])
+            user.save()
+            return Response({
+                "message": "Password reset successful"
+            }, status=status.HTTP_200_OK)
+        except (DjangoUnicodeDecodeError, User.DoesNotExist):
+            return Response({
+                "message": "Invalid token"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class SetChangePassword(GenericAPIView):
+    serializer_class = ChangePasswordSerializer
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, uidb64, token):
+        try:
+            user_id = smart_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(id=user_id)
+            if not PasswordResetTokenGenerator().check_token(user, token):
+                return Response({
+                    "message": "Token is not valid, please request a new one"
+                }, status=status.HTTP_401_UNAUTHORIZED)
+            serializer = self.serializer_class(data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            user.set_password(serializer.validated_data['new_password'])
+            user.save()
+            return Response({
+                "message": "Password updated successfully"
+            }, status=status.HTTP_200_OK)
+        except (DjangoUnicodeDecodeError, User.DoesNotExist):
+            return Response({
+                "message": "Invalid token"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+class OTPVerificationView(GenericAPIView):
+    serializer_class = VerifyUserEmailSerializer
+
+    def post(self, request):
+        otp_code = request.data.get('otp')
+        try:
+            otp_obj = OneTimePassword.objects.get(code=otp_code)
+            user = otp_obj.user
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                "success": True,
+                "msg": "OTP is valid",
+                "access": str(refresh.access_token),
+            }, status=status.HTTP_200_OK)
+        except OneTimePassword.DoesNotExist:
+            return Response({
+                "msg": "Invalid OTP"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+class PasswordChangeView(GenericAPIView):
+    serializer_class = SetNewPasswordSerializer
+    permission_classes = [IsAuthenticated]
+
     def patch(self, request):
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
+        user = request.user
+        user.set_password(serializer.validated_data['password'])
+        user.save()
         return Response({
             "message": "Password reset successful"
         }, status=status.HTTP_200_OK)
+
+class ChangePasswordView(UpdateAPIView):
+    serializer_class = ChangePasswordSerializer
+    permission_classes = [IsAuthenticated]
+
+    def update(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
+
+class LogoutUserView(GenericAPIView):
+    serializer_class=LogoutUserSerialezer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class DeleteUserView(GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, *args, **kwargs):
+        user = request.user
+        user.is_active = False
+        user.archive_date = timezone.now()
+        user.save()
+        return Response({
+            "message": "User deleted successfully"
+        }, status=status.HTTP_200_OK)
+
+
+class PasswordChangeRequestView(GenericAPIView):
+    serializer_class = PasswordResetRequestSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        return Response({
+            "message": "An OTP has been sent to your email to verify your identity"
+        }, status=status.HTTP_200_OK)
+
+class ChangePasswordRequestView(GenericAPIView):
+    serializer_class = ChangePasswordRequestSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        return Response({
+            "message": "An OTP has been sent to your email to verify your identity"
+        }, status=status.HTTP_200_OK)
+
+class VerifyPasswordChangeOTPView(GenericAPIView):
+    serializer_class = VerifyUserEmailSerializer
+
+    def post(self, request):
+        otp_code = request.data.get('otp')
+        try:
+            otp_obj = OneTimePassword.objects.get(code=otp_code)
+            user = otp_obj.user
+            uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
+            token = PasswordResetTokenGenerator().make_token(user)
+            current_site = get_current_site(request).domain
+            relative_link = reverse('set-new-password', kwargs={'uidb64': uidb64, 'token': token})
+            abslink = f"http://{current_site}{relative_link}"
+            return Response({
+                "message": "OTP verified successfully",
+                "password_reset_link": abslink
+            }, status=status.HTTP_200_OK)
+        except OneTimePassword.DoesNotExist:
+            return Response({
+                "message": "Invalid OTP"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+class VerifyChangePasswordOTPView(GenericAPIView):
+    serializer_class = VerifyUserEmailSerializer
+
+    def post(self, request):
+        otp_code = request.data.get('otp')
+        try:
+            otp_obj = OneTimePassword.objects.get(code=otp_code)
+            user = otp_obj.user
+            uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
+            token = PasswordResetTokenGenerator().make_token(user)
+            current_site = get_current_site(request).domain
+            relative_link = reverse('set-change-password', kwargs={'uidb64': uidb64, 'token': token})
+            abslink = f"http://{current_site}{relative_link}"
+            return Response({
+                "message": "OTP verified successfully",
+                "password_reset_link": abslink
+            }, status=status.HTTP_200_OK)
+        except OneTimePassword.DoesNotExist:
+            return Response({
+                "message": "Invalid OTP"
+            }, status=status.HTTP_400_BAD_REQUEST)
 

@@ -29,8 +29,9 @@ class StudySet(SoftDeleteModel):
 
 class Document(models.Model):
     document = models.FileField(upload_to='documents/')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    selected_pages = models.JSONField(default=list)
+    selected_pages_added_at = models.DateTimeField(auto_now=True)
     studyset_instance = models.ForeignKey('studysetapp.StudySet', on_delete=models.CASCADE, related_name='document')
 
     def __str__(self):
