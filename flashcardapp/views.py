@@ -3,6 +3,8 @@ from django.http import Http404
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework import generics
+
+from studysetapp.models import StudySet
 from .models import Flashcard
 from .paginators import StandardPaginationFlashcards, ReviewModePaginationFlashcard
 from .serializers import FlashcardSerializer
@@ -35,18 +37,21 @@ class CreateFlashcard(generics.CreateAPIView):
             }, status=HTTP_400_BAD_REQUEST)
 
 class ListOfFlashcards(generics.ListAPIView):
-    queryset = Flashcard.objects.all().order_by('created_at')
     serializer_class = FlashcardSerializer
 
-    try:
-        queryset = Flashcard.objects.all()
-    except Flashcard.DoesNotExist:
-        raise Http404("No Flashcards found")
+    def get_queryset(self):
+        studyset_id = self.request.query_params.get('studyset_id')
+        if studyset_id:
+            try:
+                studyset_instance = StudySet.objects.get(id=studyset_id)
+                return Flashcard.objects.filter(studyset_instance=studyset_instance).order_by('created_at')
+            except StudySet.DoesNotExist:
+                raise Http404("StudySet not found")
+        return Flashcard.objects.none()
 
     def get(self, request, *args, **kwargs):
         flashcards = self.get_queryset()
-        page = self.paginate_queryset(flashcards)
-        serializer = self.get_serializer(page, many=True)
+        serializer = self.get_serializer(flashcards, many=True)
 
         if not serializer.data:
             return Response({
@@ -55,16 +60,26 @@ class ListOfFlashcards(generics.ListAPIView):
                 'status': HTTP_200_OK
             }, status=HTTP_200_OK)
         else:
-            return self.get_paginated_response(serializer.data)
+            return Response({
+                'message': 'Flashcards retrieved successfully.',
+                'data': serializer.data,
+                'status': HTTP_200_OK
+            }, status=HTTP_200_OK)
+
+
 class LibraryOfFlashcards(generics.ListAPIView):
-    queryset = Flashcard.objects.all().order_by('created_at')
     serializer_class = FlashcardSerializer
     pagination_class = StandardPaginationFlashcards
 
-    try:
-        queryset = Flashcard.objects.all()
-    except Flashcard.DoesNotExist:
-        raise Http404("No Flashcards found")
+    def get_queryset(self):
+        studyset_id = self.request.query_params.get('studyset_id')
+        if studyset_id:
+            try:
+                studyset_instance = StudySet.objects.get(id=studyset_id)
+                return Flashcard.objects.filter(studyset_instance=studyset_instance).order_by('created_at')
+            except StudySet.DoesNotExist:
+                raise Http404("StudySet not found")
+        return Flashcard.objects.none()
 
     def get(self, request, *args, **kwargs):
         flashcards = self.get_queryset()
@@ -81,15 +96,21 @@ class LibraryOfFlashcards(generics.ListAPIView):
             response = self.get_paginated_response(serializer.data)
             response.status_code = HTTP_200_OK
             return response
+
+
 class ReviewModeFlashcard(generics.ListAPIView):
-    queryset = Flashcard.objects.all().order_by('created_at')
     serializer_class = FlashcardSerializer
     pagination_class = ReviewModePaginationFlashcard
 
-    try:
-        queryset = Flashcard.objects.all()
-    except Flashcard.DoesNotExist:
-        raise Http404("No Flashcards found")
+    def get_queryset(self):
+        studyset_id = self.request.query_params.get('studyset_id')
+        if studyset_id:
+            try:
+                studyset_instance = StudySet.objects.get(id=studyset_id)
+                return Flashcard.objects.filter(studyset_instance=studyset_instance).order_by('created_at')
+            except StudySet.DoesNotExist:
+                raise Http404("StudySet not found")
+        return Flashcard.objects.none()
 
     def get(self, request, *args, **kwargs):
         flashcards = self.get_queryset()
@@ -181,9 +202,18 @@ class DeleteFlashcard(generics.RetrieveDestroyAPIView):
 class FlashcardSearchView(APIView):
     def get(self, request, *args, **kwargs):
         query = request.query_params.get('q', '')  # Get the search query
+        studyset_id = request.query_params.get('studyset_id')  # Get the studyset ID
 
         if query:
-            flashcards = Flashcard.objects.filter(
+            flashcards = Flashcard.objects.all()
+            if studyset_id:
+                try:
+                    studyset_instance = StudySet.objects.get(id=studyset_id)
+                    flashcards = flashcards.filter(studyset_instance=studyset_instance)
+                except StudySet.DoesNotExist:
+                    raise Http404("StudySet not found")
+
+            flashcards = flashcards.filter(
                 Q(question__icontains=query) | Q(answer__icontains=query)
             )
             serializer = FlashcardSerializer(flashcards, many=True)
