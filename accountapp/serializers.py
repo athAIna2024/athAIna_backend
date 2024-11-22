@@ -104,21 +104,34 @@ class PasswordResetRequestSerializer(serializers.Serializer):
             }
             send_normal_email(data)
         return super().validate(attrs)
+class ChangePasswordRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=255)
+
+    class Meta:
+        fields = ['email']
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        if User.objects.filter(email=email).exists():
+            user = User.objects.get(email=email)
+            # Delete any existing OTP for the user
+            OneTimePassword.objects.filter(user=user).delete()
+            otp_code = OneTimePassword.objects.create(user=user, code=generateOtp())  # Assuming generate_otp() is a utility function to generate OTP
+            uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
+            token = PasswordResetTokenGenerator().make_token(user)
+            request = self.context.get('request')
+            email_body = f"Your OTP code is {otp_code.code} \\n Use this link to verify http://localhost:8000/account/verify-change-password-otp/"
+            data = {
+                'email_body': email_body,
+                'email_subject': "Reset your Password",
+                'to_email': user.email
+            }
+            send_normal_email(data)
+        return super().validate(attrs)
 
 class SetNewPasswordSerializer(serializers.Serializer):
     password = serializers.CharField(max_length=100, min_length=6, write_only=True)
     confirm_password = serializers.CharField(max_length=100, min_length=6, write_only=True)
-
-    # class Meta:
-    #     fields = ['password', 'confirm_password']
-    #
-    # def validate(self, attrs):
-    #     password = attrs.get('password')
-    #     confirm_password = attrs.get('confirm_password')
-    #     if password != confirm_password:
-    #         raise serializers.ValidationError('Passwords do not match')
-    #     return attrs
-
     class Meta:
         fields = ['password', 'confirm_password']
 

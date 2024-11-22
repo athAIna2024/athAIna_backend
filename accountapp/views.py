@@ -13,7 +13,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from accountapp.models import OneTimePassword, User
 from accountapp.serializers import UserRegistrationSerializer, VerifyUserEmailSerializer, LoginSerializer, \
     SetNewPasswordSerializer, \
-    PasswordResetRequestSerializer, LogoutUserSerialezer, ChangePasswordSerializer
+    PasswordResetRequestSerializer, LogoutUserSerialezer, ChangePasswordSerializer, ChangePasswordRequestSerializer
 from accountapp.utils import send_code_to_user
 from rest_framework.response import Response
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
@@ -142,6 +142,31 @@ class SetNewPassword(GenericAPIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
 
+
+class SetChangePassword(GenericAPIView):
+    serializer_class = ChangePasswordSerializer
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, uidb64, token):
+        try:
+            user_id = smart_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(id=user_id)
+            if not PasswordResetTokenGenerator().check_token(user, token):
+                return Response({
+                    "message": "Token is not valid, please request a new one"
+                }, status=status.HTTP_401_UNAUTHORIZED)
+            serializer = self.serializer_class(data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            user.set_password(serializer.validated_data['new_password'])
+            user.save()
+            return Response({
+                "message": "Password updated successfully"
+            }, status=status.HTTP_200_OK)
+        except (DjangoUnicodeDecodeError, User.DoesNotExist):
+            return Response({
+                "message": "Invalid token"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
 class OTPVerificationView(GenericAPIView):
     serializer_class = VerifyUserEmailSerializer
 
@@ -219,6 +244,16 @@ class PasswordChangeRequestView(GenericAPIView):
             "message": "An OTP has been sent to your email to verify your identity"
         }, status=status.HTTP_200_OK)
 
+class ChangePasswordRequestView(GenericAPIView):
+    serializer_class = ChangePasswordRequestSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        return Response({
+            "message": "An OTP has been sent to your email to verify your identity"
+        }, status=status.HTTP_200_OK)
+
 class VerifyPasswordChangeOTPView(GenericAPIView):
     serializer_class = VerifyUserEmailSerializer
 
@@ -231,6 +266,28 @@ class VerifyPasswordChangeOTPView(GenericAPIView):
             token = PasswordResetTokenGenerator().make_token(user)
             current_site = get_current_site(request).domain
             relative_link = reverse('set-new-password', kwargs={'uidb64': uidb64, 'token': token})
+            abslink = f"http://{current_site}{relative_link}"
+            return Response({
+                "message": "OTP verified successfully",
+                "password_reset_link": abslink
+            }, status=status.HTTP_200_OK)
+        except OneTimePassword.DoesNotExist:
+            return Response({
+                "message": "Invalid OTP"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+class VerifyChangePasswordOTPView(GenericAPIView):
+    serializer_class = VerifyUserEmailSerializer
+
+    def post(self, request):
+        otp_code = request.data.get('otp')
+        try:
+            otp_obj = OneTimePassword.objects.get(code=otp_code)
+            user = otp_obj.user
+            uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
+            token = PasswordResetTokenGenerator().make_token(user)
+            current_site = get_current_site(request).domain
+            relative_link = reverse('set-change-password', kwargs={'uidb64': uidb64, 'token': token})
             abslink = f"http://{current_site}{relative_link}"
             return Response({
                 "message": "OTP verified successfully",
