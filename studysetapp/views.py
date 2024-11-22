@@ -120,33 +120,31 @@ class StudySetFilterBySubjectView(generics.ListAPIView):
             return StudySet.objects.filter(subjects=subject).order_by('created_at')
         return StudySet.objects.none()
 
+class DeleteStudySet(generics.RetrieveDestroyAPIView):
+    queryset = StudySet.objects.all()
+    serializer_class = StudySetSerializer
+    lookup_field = 'id'
 
+    def get_object(self):
+        try:
+            return super().get_object()
+        except Http404:
+            raise NotFound({"detail": "No Study Set found with ID {0}".format(self.kwargs.get('id'))})
+    def perform_delete(self, serializer):
+        serializer.delete()
 
-# class DeleteStudySet(generics.RetrieveDestroyAPIView):
-#     queryset = StudySet.objects.all()
-#     serializer_class = StudySetSerializer
-#     lookup_field = 'id'
-#
-#     def get_object(self):
-#         try:
-#             return super().get_object()
-#         except Http404:
-#             raise NotFound({"detail": "No Study Set found with ID {0}".format(self.kwargs.get('id'))})
-#     def perform_delete(self, serializer):
-#         serializer.delete()
-#
-#     def delete(self, request, *args, **kwargs):
-#         studyset = self.get_object()
-#         serializer = self.get_serializer(studyset)
-#
-#         if serializer:
-#             self.perform_delete(studyset)
-#             return Response({
-#                 'message': 'Study set deleted successfully.',
-#                 'data': serializer.data
-#             }, status=HTTP_200_OK)
-#         else:
-#             return Response({
-#                 'message': 'Study set could not be deleted, please try again.',
-#                 'errors': serializer.errors
-#             }, status=HTTP_400_BAD_REQUEST)
+    def delete(self, request, *args, **kwargs):
+        studyset = self.get_object()
+        serializer = self.get_serializer(studyset)
+
+        if serializer:
+            self.perform_delete(studyset)
+            return Response({
+                'message': 'Study set deleted successfully.',
+                'data': serializer.data
+            }, status=HTTP_200_OK)
+        else:
+            return Response({
+                'message': 'Study set could not be deleted, please try again.',
+                'errors': serializer.errors
+            }, status=HTTP_400_BAD_REQUEST)
