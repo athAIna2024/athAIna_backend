@@ -1,14 +1,16 @@
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_201_CREATED
 from django.http import Http404
 from rest_framework.exceptions import NotFound
-from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_201_CREATED
 from rest_framework.response import Response
 from rest_framework import generics
-from .models import Document
-from .serializers import StudySetSerializer, DocumentSerializer, ChoosePagesFromPDFSerializer
-import base64
-from .pymupdf_utils import convert_pdf_to_images
+from rest_framework.views import APIView
+from rest_framework import status
+from django.db.models import Q
 
-# Create your views here.
+
+from .models import StudySet
+from .serializers import StudySetSerializer
+from .paginators import StandardPaginationStudySets
 
 class CreateStudySet(generics.CreateAPIView):
     serializer_class = StudySetSerializer
@@ -33,146 +35,116 @@ class CreateStudySet(generics.CreateAPIView):
                 'errors': serializer.errors
             }, status=HTTP_400_BAD_REQUEST)
 
-class UploadDocument(generics.CreateAPIView):
-    serializer_class = DocumentSerializer
+class LibraryOfStudySet(generics.ListAPIView):
+    queryset = StudySet.objects.all().order_by('created_at')
+    serializer_class = StudySetSerializer
+    pagination_class = StandardPaginationStudySets
 
-    def perform_create(self, serializer):
-        document = serializer.validated_data.get('document')
-        studyset_instance = serializer.validated_data.get('studyset_instance')
-        serializer.save(document=document, studyset_instance=studyset_instance)
+    try:
+        queryset = StudySet.objects.all()
+    except StudySet.DoesNotExist:
+        raise Http404("No Study Sets found")
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            self.perform_create(serializer)
+    def get(self, request, *args, **kwargs):
+        studyset = self.get_queryset()
+        page = self.paginate_queryset(studyset)
+        serializer = self.get_serializer(page, many=True)
+
+        if not serializer.data:
             return Response({
-                'message': 'Document uploaded successfully.',
+                'message': 'No Study Sets found.',
                 'data': serializer.data,
-                'status': HTTP_201_CREATED
-            }, status=HTTP_201_CREATED)
+                'status': HTTP_200_OK
+            }, status=HTTP_200_OK)
         else:
-            return Response({
-                'message': 'Document could not be uploaded, please try again.',
-                'status': HTTP_400_BAD_REQUEST,
-                'errors': serializer.errors
-            }, status=HTTP_400_BAD_REQUEST)
+            response = self.get_paginated_response(serializer.data)
+            response.status_code = HTTP_200_OK
+            return response
 
-# class ChoosePagesFromPDF(generics.RetrieveUpdateAPIView):
-#     serializer_class = ChoosePagesFromPDFSerializer
-#     lookup_field = 'pk'
-#     queryset = Document.objects.all()
-#
-#     def get_object(self):
-#         try:
-#             return super().get_object()
-#         except Http404:
-#             raise NotFound({"detail": "No Document found with ID {0}".format(self.kwargs.get('pk'))})
-#
-#     def perform_update(self, serializer):
-#         selected_pages = serializer.validated_data.get('selected_pages')
-#         serializer.save(selected_pages=selected_pages)
-#
-#     def update(self, request, *args, **kwargs):
-#         document = self.get_object()
-#
-#         # partial=True allows for partial updates
-#         serializer = self.get_serializer(document, data=request.data, partial=True)
-#         if serializer.is_valid():
-#             self.perform_update(serializer)
-#             return Response({
-#                 'message': 'Document updated successfully.',
-#                 'data': serializer.data,
-#                 'status': HTTP_200_OK
-#             }, status=HTTP_200_OK)
-#         else:
-#             return Response({
-#                 'message': 'Document could not be updated, please try again.',
-#                 'errors': serializer.errors,
-#                 'status': HTTP_400_BAD_REQUEST
-#             }, status=HTTP_400_BAD_REQUEST)
 
-class ChoosePagesFromPDF(generics.RetrieveUpdateAPIView):
-    serializer_class = ChoosePagesFromPDFSerializer
-    lookup_field = 'pk'
-    queryset = Document.objects.all()
+class UpdateStudySet(generics.RetrieveUpdateAPIView):
+    queryset = StudySet.objects.all()
+    serializer_class = StudySetSerializer
+    lookup_field = 'id'
 
     def get_object(self):
         try:
             return super().get_object()
         except Http404:
-            raise NotFound({"detail": "No Document found with ID {0}".format(self.kwargs.get('pk'))})
-
-    def retrieve(self, request, *args, **kwargs):
-        document = self.get_object()
-        file_name = document.document.name
-        try:
-            images = convert_pdf_to_images(file_name)
-            encoded_images = [
-                {
-                    'id': page_num + 1,
-                    'image': base64.b64encode(image.tobytes()).decode('utf-8')
-                }
-                for page_num, image in enumerate(images)
-            ]
-            return Response({
-                'message': 'Document retrieved successfully.',
-                'data': self.get_serializer(document).data,
-                'images': encoded_images,
-                'status': HTTP_200_OK
-            }, status=HTTP_200_OK)
-        except FileNotFoundError:
-            raise NotFound({"detail": f"File not found: {file_name}"})
-        except RuntimeError as e:
-            return Response({
-                'message': 'Failed to convert PDF to images.',
-                'error': str(e),
-                'status': HTTP_400_BAD_REQUEST
-            }, status=HTTP_400_BAD_REQUEST)
-
+            raise NotFound({"detail": "No Study Set found with ID {0}".format(self.kwargs.get('id'))})
     def perform_update(self, serializer):
-        selected_pages = serializer.validated_data.get('selected_pages')
-        serializer.save(selected_pages=selected_pages)
+        title = serializer.validated_data.get('title')
+        description = serializer.validated_data.get('description')
+        subjects = serializer.validated_data.get('subjects')
+        studyset_id = serializer.validated_data.get('studyset_id')
+        serializer.save(title=title, description=description, subjects=subjects, studyset_id=studyset_id)
 
-    def partial_update(self, request, *args, **kwargs):
-        document = self.get_object()
+    def put(self, request, *args, **kwargs):
+        studyset = self.get_object()
 
         # partial=True allows for partial updates
-        serializer = self.get_serializer(document, data=request.data, partial=True)
+        serializer = self.get_serializer(studyset, data=request.data, partial=True)
         if serializer.is_valid():
             self.perform_update(serializer)
             return Response({
-                'message': 'Document updated successfully.',
-                'data': serializer.data,
-                'status': HTTP_200_OK
+                'message': 'Study Set updated successfully.',
+                'data': serializer.data
             }, status=HTTP_200_OK)
         else:
             return Response({
-                'message': 'Document could not be updated, please try again.',
-                'errors': serializer.errors,
-                'status': HTTP_400_BAD_REQUEST
+                'message': 'Study Set could not be updated, please try again.',
+                'errors': serializer.errors
             }, status=HTTP_400_BAD_REQUEST)
-class DisplayPDFImagesPreview(generics.RetrieveAPIView):
 
-    def get(self, request, pk):
+
+class StudySetSearchView(APIView):
+    def get(self, request, *args, **kwargs):
+        query = request.query_params.get('q', '')
+
+        if query:
+            study_sets = StudySet.objects.filter(
+                Q(title__icontains=query) | Q(description__icontains=query)
+            )
+            serializer = StudySetSerializer(study_sets, many=True)
+            return Response(serializer.data)
+
+        return Response({"message": "No query provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudySetFilterBySubjectView(generics.ListAPIView):
+    serializer_class = StudySetSerializer
+
+    def get_queryset(self):
+        subject = self.request.query_params.get('q', '')
+        if subject:
+            return StudySet.objects.filter(subjects=subject).order_by('created_at')
+        return StudySet.objects.none()
+
+class DeleteStudySet(generics.RetrieveDestroyAPIView):
+    queryset = StudySet.objects.all()
+    serializer_class = StudySetSerializer
+    lookup_field = 'id'
+
+    def get_object(self):
         try:
-            document = Document.objects.get(pk=pk)
-            images = convert_pdf_to_images(document.document.name)
-            image_data = []
-            for image in images:
-                image_data.append(base64.b64encode(image.tobytes()).decode('utf-8'))
+            return super().get_object()
+        except Http404:
+            raise NotFound({"detail": "No Study Set found with ID {0}".format(self.kwargs.get('id'))})
+    def perform_delete(self, serializer):
+        serializer.delete()
+
+    def delete(self, request, *args, **kwargs):
+        studyset = self.get_object()
+        serializer = self.get_serializer(studyset)
+
+        if serializer:
+            self.perform_delete(studyset)
             return Response({
-                'message': 'Images retrieved successfully.',
-                'data': image_data,
-                'status': HTTP_200_OK
+                'message': 'Study set deleted successfully.',
+                'data': serializer.data
             }, status=HTTP_200_OK)
-        except Document.DoesNotExist:
-            raise NotFound({"detail": "No Document found with ID {0}".format(pk)})
-
-    def retrieve(self, request, *args, **kwargs):
-        return self.get(request, *args, **kwargs)
-
-class ExtractTextFromPDF(generics.GenericAPIView):
-    pass
-
-class GenerateFlashcards(generics.CreateAPIView):
-    pass
+        else:
+            return Response({
+                'message': 'Study set could not be deleted, please try again.',
+                'errors': serializer.errors
+            }, status=HTTP_400_BAD_REQUEST)

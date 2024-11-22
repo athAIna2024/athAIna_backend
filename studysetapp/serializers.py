@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from .models import StudySet, Document
-from .validators import validate_file_extension
+from .models import StudySet
 
 class StudySetSerializer(serializers.ModelSerializer):
     class Meta:
@@ -34,43 +33,3 @@ class StudySetSerializer(serializers.ModelSerializer):
             'required': 'Please provide a subject',
         })
 
-
-class DocumentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Document
-        fields = ['document', 'studyset_instance']
-        read_only_fields = ['selected_pages', 'uploaded_at']
-
-    document = serializers.FileField(
-        required=True,
-        validators=[validate_file_extension],
-        error_messages={
-            'required': 'Please provide a document',
-        })
-
-    studyset_instance = serializers.PrimaryKeyRelatedField(
-        queryset=StudySet.objects.all(),
-        required=True,
-        error_messages={
-            'required': 'Please provide a study set instance',
-        })
-
-class ChoosePagesFromPDFSerializer(serializers.Serializer):
-    selected_pages = serializers.JSONField(
-        required=True,
-        error_messages={
-            'required': 'Please provide the selected pages',
-        })
-
-    class Meta:
-        model = Document
-        fields = ['selected_pages']
-        read_only_fields = ['document', 'studyset_instance', 'uploaded_at']
-
-    # Override since we are not using another serializer for saving the selected pages
-    # to the Document model
-    # For Flashcard Serializer both create and update modifies all model fields
-    def update(self, instance, validated_data):
-        instance.selected_pages = validated_data.get('selected_pages', instance.selected_pages)
-        instance.save()
-        return instance
