@@ -74,3 +74,11 @@ class ChoosePagesFromPDFSerializer(serializers.Serializer):
         instance.selected_pages = validated_data.get('selected_pages', instance.selected_pages)
         instance.save()
         return instance
+
+class ExtractedDataSerializer(serializers.Serializer):
+    extracted_text = serializers.CharField(
+        required=True,
+        error_messages={
+            'required': 'Please provide the extracted text',
+        })
+

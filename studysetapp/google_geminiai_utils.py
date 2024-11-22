@@ -12,8 +12,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'athAIna_backend.settings')
 # Initialize Django
 django.setup()
 
-from flashcardapp.serializers import GeneratedFlashcardSerializer
-from .models import StudySet
+from studysetapp.models import StudySet
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -37,20 +36,20 @@ safety_settings = {
 }
 
 # ADD TO CRS File the minimum and maximum flashcards generated
-
+system_instruction = ("You are a tutor who generates flashcards for learners."
+                                    "Format: Question:Insert the question here/Answer:Insert the answer here."
+                                    "Each flashcard should be on a new line."
+                                    "Questions: ~300 characters. Answers: <=100 characters."
+                                    "Generate 10-15 flashcards based on the provided data." )
 
 model = genai.GenerativeModel(
     model_name="gemini-1.5-pro",
     generation_config=generation_config,
+    system_instruction=system_instruction,
 )
 
-def generate_data_for_flashcards(data, studyset_id):
-    studyset_title = StudySet.objects.all().filter(id=studyset_id).values('title')
-    prompt = ("You are a tutor who generates flashcards for learners."
-    "Format: Question:Insert the question here/Answer:Insert the answer here."
-    "Each flashcard should be on a new line."
-    "Questions: ~300 characters. Answers: <=100 characters."
-    "Generate 10-15 flashcards based on the provided data." + data + studyset_title)
+def generate_data_for_flashcards(data):
+    prompt = f"The data provided is as follows: {data}"
 
     valid_flashcards = []
     try:
@@ -79,8 +78,6 @@ def generate_data_for_flashcards(data, studyset_id):
 
     return valid_flashcards
 
-# print(generate_data_for_flashcards("Networking", 1))
-
 def clean_data_for_flashcard_creation(valid_flashcards=[], studyset_id=None):
     flashcard_data = []
 
@@ -96,25 +93,3 @@ def clean_data_for_flashcard_creation(valid_flashcards=[], studyset_id=None):
             # print("Flashcard entry:", flashcard_entry) # Debugging: Print each flashcard entry
     return flashcard_data
 
-# def generate_flashcards(valid_flashcards=[], studyset_id=None):
-#     flashcard_data = []
-#     try:
-#         for flashcard in valid_flashcards:
-#             if "/" in flashcard:
-#                 question, answer = flashcard.split("/", 1)
-#                 flashcard_entry = {
-#                     'question': question.replace("Question:", "").strip(),
-#                     'answer': answer.replace("Answer:", "").strip(),
-#                     'studyset_instance': studyset_id,  # Ensure this ID exists in your StudySet model
-#                 }
-#                 flashcard_data.append(flashcard_entry)
-#                 print("Flashcard entry:", flashcard_entry)  # Debugging: Print each flashcard entry
-#
-#         serializer = GeneratedFlashcardSerializer(data=flashcard_data, many=True)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return "Flashcards generated successfully."
-#         else:
-#             raise ValidationError(serializer.errors)
-#     except Exception as e:
-#         raise RuntimeError(f"An error occurred while generating flashcards. {e}")

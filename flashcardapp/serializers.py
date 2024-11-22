@@ -1,3 +1,4 @@
+from django_softdelete.managers import SoftDeleteQuerySet
 from rest_framework import serializers
 from studysetapp.models import StudySet
 from .models import Flashcard
@@ -119,3 +120,10 @@ class GeneratedFlashcardSerializer(serializers.ModelSerializer):
         fields = ['question', 'answer', 'image', 'studyset_instance', 'created_at', 'updated_at', 'is_ai_generated']
         read_only_fields = ['image', 'created_at', 'updated_at', 'deleted_at', 'restored_at', 'transaction_id']
         list_serializer_class = BulkCreateListSerializer
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        # Ensure that studyset_instance is correctly represented
+        if isinstance(representation.get('studyset_instance'), SoftDeleteQuerySet):
+            representation['studyset_instance'] = list(representation['studyset_instance'])
+        return representation

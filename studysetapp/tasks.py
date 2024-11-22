@@ -9,8 +9,8 @@ def convert_pdf_to_images_task(file_name):
 def extract_data_from_pdf_task(file_name, page_numbers=[]):
     return extract_data_from_pdf(file_name, page_numbers)
 @shared_task
-def generate_flashcards_task(extracted_data, studyset_id):
-    return generate_data_for_flashcards(extracted_data, studyset_id)
+def generate_flashcards_task(extracted_data):
+    return generate_data_for_flashcards(extracted_data)
 
 @shared_task
 def clean_data_for_flashcard_creation_task(valid_flashcards, studyset_id):
