@@ -18,6 +18,7 @@ class StudySet(SoftDeleteModel):
         TECHNOLOGY = 'TECH', _('Technology')
         WRITING_LITERATURE = 'WRIT_LIT', _('Writing and Literature')
 
+    learner_instance = models.ForeignKey('accountapp.Learner', on_delete=models.CASCADE)
     title = models.CharField(max_length=60)
     description = models.CharField(max_length=100)
     subjects = models.CharField(max_length=20, choices=SubjectChoices.choices)

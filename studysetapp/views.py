@@ -1,10 +1,13 @@
 from django.http import Http404
 from rest_framework.exceptions import NotFound
-from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_201_CREATED
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_404_NOT_FOUND
 from rest_framework.response import Response
 from rest_framework import generics
+
+from accountapp.models import Learner
 from .models import Document
-from .serializers import StudySetSerializer, DocumentSerializer, ChoosePagesFromPDFSerializer, ExtractedDataSerializer, GeneratedDataForFlashcardsSerializer
+from .serializers import StudySetSerializer, DocumentSerializer, ChoosePagesFromPDFSerializer, ExtractedDataSerializer, \
+    GeneratedDataForFlashcardsSerializer, UpdateStudySetSerializer
 from flashcardapp.models import Flashcard
 from flashcardapp.serializers import GeneratedFlashcardSerializer
 from .tasks import convert_pdf_to_images_task, extract_data_from_pdf_task, generate_flashcards_task, clean_data_for_flashcard_creation_task
@@ -20,6 +23,7 @@ class CreateStudySet(generics.CreateAPIView):
     serializer_class = StudySetSerializer
 
     def perform_create(self, serializer):
+        learner_instance = serializer.validated_data.get('learner_instance')
         title = serializer.validated_data.get('title')
         description = serializer.validated_data.get('description')
         subjects = serializer.validated_data.get('subjects')
@@ -40,14 +44,18 @@ class CreateStudySet(generics.CreateAPIView):
             }, status=HTTP_400_BAD_REQUEST)
 
 class LibraryOfStudySet(generics.ListAPIView):
-    queryset = StudySet.objects.all().order_by('created_at')
     serializer_class = StudySetSerializer
     pagination_class = StandardPaginationStudySets
 
-    try:
-        queryset = StudySet.objects.all()
-    except StudySet.DoesNotExist:
-        raise Http404("No Study Sets found")
+    def get_queryset(self):
+        user_id = self.request.query_params.get('user_id') # For authentication, the code will be different
+        if user_id:
+            try:
+                learner = Learner.objects.get(user_id=user_id)  # Assuming Learner model has a user_id field
+                return StudySet.objects.filter(learner_instance=learner).order_by('created_at')
+            except Learner.DoesNotExist:
+                raise Http404("Learner not found")
+        return StudySet.objects.none()
 
     def get(self, request, *args, **kwargs):
         studyset = self.get_queryset()
@@ -64,13 +72,12 @@ class LibraryOfStudySet(generics.ListAPIView):
             response = self.get_paginated_response(serializer.data)
             response.status_code = HTTP_200_OK
             return response
-
-
 class UpdateStudySet(generics.RetrieveUpdateAPIView):
     queryset = StudySet.objects.all()
-    serializer_class = StudySetSerializer
+    serializer_class = UpdateStudySetSerializer
     lookup_field = 'id'
 
+    # Verify if StudySet learner_instance should be updated or be checked through authentication
     def get_object(self):
         try:
             return super().get_object()
@@ -104,16 +111,24 @@ class UpdateStudySet(generics.RetrieveUpdateAPIView):
 class StudySetSearchView(APIView):
     def get(self, request, *args, **kwargs):
         query = request.query_params.get('q', '')
+        learner_id = request.query_params.get('learner_id')
 
         if query:
-            study_sets = StudySet.objects.filter(
+            study_sets = StudySet.objects.all()
+            if learner_id:
+                try:
+                    learner = Learner.objects.get(id=learner_id)
+                    study_sets = study_sets.filter(learner_instance=learner)
+                except Learner.DoesNotExist:
+                    return Response({"message": "Learner not found."}, status=HTTP_404_NOT_FOUND)
+
+            study_sets = study_sets.filter(
                 Q(title__icontains=query) | Q(description__icontains=query)
             )
             serializer = StudySetSerializer(study_sets, many=True)
             return Response(serializer.data)
 
         return Response({"message": "No query provided."}, status=HTTP_400_BAD_REQUEST)
-
 
 class StudySetFilterBySubjectView(generics.ListAPIView):
     serializer_class = StudySetSerializer
