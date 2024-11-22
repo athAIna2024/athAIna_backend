@@ -6,7 +6,8 @@ from rest_framework import generics
 from .models import Flashcard
 from .paginators import StandardPaginationFlashcards, ReviewModePaginationFlashcard
 from .serializers import FlashcardSerializer
-
+from rest_framework.views import APIView
+from django.db.models import Q
 class CreateFlashcard(generics.CreateAPIView):
     serializer_class = FlashcardSerializer
 
@@ -177,3 +178,15 @@ class DeleteFlashcard(generics.RetrieveDestroyAPIView):
                 'status': HTTP_400_BAD_REQUEST
             }, status=HTTP_400_BAD_REQUEST)
 
+class FlashcardSearchView(APIView):
+    def get(self, request, *args, **kwargs):
+        query = request.query_params.get('q', '')  # Get the search query
+
+        if query:
+            flashcards = Flashcard.objects.filter(
+                Q(question__icontains=query) | Q(answer__icontains=query)
+            )
+            serializer = FlashcardSerializer(flashcards, many=True)
+            return Response(serializer.data)
+
+        return Response({"message": "No query provided."}, status=HTTP_400_BAD_REQUEST)

@@ -47,7 +47,6 @@ class FlashcardSerializer(serializers.ModelSerializer):
             'invalid_image': 'Please provide a valid image file.',
         })
 
-
 class BulkCreateListSerializer(serializers.ListSerializer):
     def create(self, validated_data):
         result = [self.child.create(attrs) for attrs in validated_data]
