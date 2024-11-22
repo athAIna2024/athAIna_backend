@@ -50,12 +50,7 @@ class FlashcardSerializer(serializers.ModelSerializer):
 
 class BulkCreateListSerializer(serializers.ListSerializer):
     def create(self, validated_data):
-        result = []
-        for attrs in validated_data:
-            # Ensure primary key is not set manually
-            if 'id' in attrs:
-                del attrs['id']
-            result.append(self.child.create(attrs))
+        result = [self.child.create(attrs) for attrs in validated_data]
 
         try:
             self.child.Meta.model.objects.bulk_create(result)
@@ -63,29 +58,6 @@ class BulkCreateListSerializer(serializers.ListSerializer):
             raise ValidationError(e)
 
         return result
-
-    def update(self, instances, validated_data):
-        instance_hash = {index: instance for index, instance in enumerate(instances)}
-        result = [
-            self.child.update(instance_hash[index], attrs)
-            for index, attrs in enumerate(validated_data)
-        ]
-
-        writable_fields = [
-            x
-            for x in self.child.Meta.fields
-            if x not in self.child.Meta.read_only_fields + ("studyset_instance",)
-        ]
-        if "updated_at" in self.child.Meta.fields:
-            writable_fields += ["updated_at"]
-
-        try:
-            self.child.Meta.model.objects.bulk_update(result, writable_fields)
-        except IntegrityError as e:
-            raise ValidationError(e)
-
-        return result
-
 class GeneratedFlashcardSerializer(serializers.ModelSerializer):
     question = serializers.CharField(
         max_length=300,

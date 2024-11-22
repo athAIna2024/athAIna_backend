@@ -82,3 +82,15 @@ class ExtractedDataSerializer(serializers.Serializer):
             'required': 'Please provide the extracted text',
         })
 
+class GeneratedDataForFlashcardsSerializer(serializers.Serializer):
+    flashcards_data = serializers.ListField(
+        child=serializers.JSONField(),
+        required=True,
+        error_messages={
+            'required': 'Please provide the flashcards data',
+        })
+    studyset_id = serializers.IntegerField(
+        required=True,
+        error_messages={
+            'required': 'Please provide the study set ID',
+        })

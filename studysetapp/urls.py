@@ -10,6 +10,6 @@ urlpatterns = [
     path('extract-text-from-selected-pages/', views.ExtractTextFromPDF.as_view(), name='extract_text_from_selected_pages'),
 
     path('generate-data-for-flashcards/', views.GenerateDataForFlashcards.as_view(), name='generate_data_for_flashcards'),
-    # path('generate-flashcards/', views.GenerateFlashcards.as_view(), name='generate_flashcards'),
+    path('generate-flashcards/', views.GenerateFlashcards.as_view(), name='generate_flashcards'),
 
 ]

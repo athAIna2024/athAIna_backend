@@ -6,6 +6,8 @@ from pathlib import Path
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 import logging
 from rest_framework.exceptions import ValidationError
+from google.api_core.exceptions import GoogleAPIError, ResourceExhausted
+
 # Set the environment variable for Django settings module
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'athAIna_backend.settings')
 
@@ -48,18 +50,15 @@ model = genai.GenerativeModel(
     system_instruction=system_instruction,
 )
 
+
 def generate_data_for_flashcards(data):
     prompt = f"The data provided is as follows: {data}"
-
     valid_flashcards = []
     try:
         response = model.generate_content(
             prompt,
             safety_settings=safety_settings
         )
-
-        if response is None or response.text == "":
-            raise ValidationError("No response received from the API. Please try again.")
 
         flashcards = response.text.strip().split("\n")
 
@@ -69,10 +68,13 @@ def generate_data_for_flashcards(data):
                 logging.info(f"Question: {question}, Answer: {answer}")
                 if len(question) <= 300 and len(answer) <= 100:
                     valid_flashcards.append(flashcard)
+
     except Exception as e:
         raise RuntimeError(f"An error occurred while generating data for flashcards. {e}")
-    except genai.errors.GenerativeAIError as e:
-        raise ValidationError(f"The request to the API failed. {e}")
+    except GoogleAPIError as e:
+        raise ValidationError(f"An error occurred with the Google API. {e}")
+    except ResourceExhausted as e:
+        raise ValidationError(f"Too many requests sent to the API. Please try again later.")
     if valid_flashcards == [] or len(valid_flashcards) < 3:
         raise ValidationError("The API did not generate enough valid flashcards. Please try again.")
 
@@ -91,5 +93,10 @@ def clean_data_for_flashcard_creation(valid_flashcards=[], studyset_id=None):
             })
             flashcard_data.append(flashcard_entry)
             # print("Flashcard entry:", flashcard_entry) # Debugging: Print each flashcard entry
+
     return flashcard_data
 
+print(clean_data_for_flashcard_creation(["Question: What is the difference of IPv4 and IPv6?/Answer: IPv4 has 32-bit address space, while IPv6 has 128-bit address space.",
+"Question: What is the OSI model?/Answer: The OSI model is a conceptual framework used to understand network communications.",
+"Question: What is the difference between TCP and UDP?/Answer: TCP is connection-oriented, while UDP is connectionless.",
+                                         "Question: What is the difference of VSLM and FSLM Subnetting?/Answer: VLSM allows for subnetting a subnet, while FLSM does not."], 1))

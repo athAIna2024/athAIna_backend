@@ -4,7 +4,7 @@ from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_201_CR
 from rest_framework.response import Response
 from rest_framework import generics
 from .models import Document
-from .serializers import StudySetSerializer, DocumentSerializer, ChoosePagesFromPDFSerializer, ExtractedDataSerializer
+from .serializers import StudySetSerializer, DocumentSerializer, ChoosePagesFromPDFSerializer, ExtractedDataSerializer, GeneratedDataForFlashcardsSerializer
 from flashcardapp.models import Flashcard
 from flashcardapp.serializers import GeneratedFlashcardSerializer
 from .tasks import convert_pdf_to_images_task, extract_data_from_pdf_task, generate_flashcards_task, clean_data_for_flashcard_creation_task
@@ -141,6 +141,7 @@ class ExtractTextFromPDF(generics.GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         document = self.get_object()
+        studyset_id = document.studyset_instance.id
         file_name = document.document.name
         selected_pages = document.selected_pages
 
@@ -151,9 +152,12 @@ class ExtractTextFromPDF(generics.GenericAPIView):
         try:
             result = extract_data_from_pdf_task.apply_async(args=(file_name, page_numbers))
             text = result.get()
+            task_id = result.id
             return Response({
                 'message': 'Data extracted successfully.',
                 'extracted_text': text,
+                'task_id': task_id,
+                'studyset_id': studyset_id,
                 'status': HTTP_200_OK
             }, status=HTTP_200_OK)
         except FileNotFoundError:
@@ -165,11 +169,8 @@ class ExtractTextFromPDF(generics.GenericAPIView):
                 'status': HTTP_400_BAD_REQUEST
             }, status=HTTP_400_BAD_REQUEST)
 
-
 class GenerateDataForFlashcards(generics.CreateAPIView):
     serializer_class = ExtractedDataSerializer
-
-
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
 
@@ -190,6 +191,49 @@ class GenerateDataForFlashcards(generics.CreateAPIView):
                 'generated_data': data,
                 'status': HTTP_200_OK
             }, status=HTTP_200_OK)
+        except RuntimeError as e:
+            return Response({
+                'message': 'Failed to generate flashcards.',
+                'error': str(e),
+                'status': HTTP_400_BAD_REQUEST
+            }, status=HTTP_400_BAD_REQUEST)
+
+class GenerateFlashcards(generics.GenericAPIView):
+    serializer_class = GeneratedDataForFlashcardsSerializer
+    queryset = Flashcard.objects.none()  # Set an empty queryset
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response({
+                'message': 'Invalid data.',
+                'errors': serializer.errors,
+                'status': HTTP_400_BAD_REQUEST
+            }, status=HTTP_400_BAD_REQUEST)
+
+        try:
+            valid_flashcards = serializer.validated_data.get('flashcards_data')
+            studyset_id = serializer.validated_data.get('studyset_id')
+
+            result = clean_data_for_flashcard_creation_task.apply_async(args=(valid_flashcards, studyset_id))
+            validated_data = result.get()
+            response_serializer = GeneratedFlashcardSerializer(data=validated_data, many=True)
+
+            if response_serializer.is_valid():
+                response_serializer.save()
+                return Response({
+                    'message': 'Flashcards created successfully.',
+                    'data': response_serializer.data,
+                    'status': HTTP_200_OK
+                }, status=HTTP_200_OK)
+            else:
+                return Response({
+                    'message': 'Failed to serialize generated data.',
+                    'errors': response_serializer.errors,
+                    'status': HTTP_400_BAD_REQUEST
+                }, status=HTTP_400_BAD_REQUEST)
+
         except RuntimeError as e:
             return Response({
                 'message': 'Failed to generate flashcards.',
