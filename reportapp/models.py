@@ -9,3 +9,6 @@ class TestResult(models.Model):
 
     def __str__(self):
         return self.submitted_at
+
+    class Meta:
+        db_table = 'testresults'

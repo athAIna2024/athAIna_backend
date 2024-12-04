@@ -12,3 +12,6 @@ class GeneratedTest(models.Model):
 
     def __str__(self):
         return self.studyset_instance.title + ' - ' + self.flashcard_instance.question
+
+    class Meta:
+        db_table = 'generatedtests'
