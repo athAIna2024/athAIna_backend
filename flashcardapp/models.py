@@ -14,3 +14,6 @@ class Flashcard(SoftDeleteModel):
     def __str__(self):
         return self.question
 
+    class Meta:
+        db_table = 'flashcards'
+

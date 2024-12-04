@@ -28,6 +28,9 @@ class StudySet(SoftDeleteModel):
     def __str__(self):
         return self.title
 
+    class Meta:
+        db_table = 'studysets'
+
 class Document(models.Model):
     document = models.FileField(upload_to='documents/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
@@ -38,3 +41,5 @@ class Document(models.Model):
     def __str__(self):
         return f"Document {self.id}"
 
+    class Meta:
+        db_table = 'documents'
