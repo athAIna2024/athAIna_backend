@@ -18,6 +18,7 @@ class StudySet(SoftDeleteModel):
         TECHNOLOGY = 'TECH', _('Technology')
         WRITING_LITERATURE = 'WRIT_LIT', _('Writing and Literature')
 
+    learner_instance = models.ForeignKey('accountapp.Learner', on_delete=models.CASCADE)
     title = models.CharField(max_length=60)
     description = models.CharField(max_length=100)
     subjects = models.CharField(max_length=20, choices=SubjectChoices.choices)
@@ -26,6 +27,9 @@ class StudySet(SoftDeleteModel):
 
     def __str__(self):
         return self.title
+
+    class Meta:
+        db_table = 'studysets'
 
 class Document(models.Model):
     document = models.FileField(upload_to='documents/')
@@ -36,3 +40,6 @@ class Document(models.Model):
 
     def __str__(self):
         return f"Document {self.id}"
+
+    class Meta:
+        db_table = 'documents'

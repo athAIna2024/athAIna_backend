@@ -194,7 +194,7 @@ class ChangePasswordSerializer(serializers.Serializer):
         return user
 
 
-class LogoutUserSerialezer(serializers.Serializer):
+class LogoutUserSerializer(serializers.Serializer):
     refresh_token = serializers.CharField()
 
     default_error_messages = {

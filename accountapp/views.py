@@ -4,16 +4,15 @@ from django.utils import timezone
 
 from django.shortcuts import render
 from google.protobuf.proto_json import serialize
-from marko.patterns import email
 from rest_framework.generics import GenericAPIView, UpdateAPIView, DestroyAPIView
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from accountapp.models import OneTimePassword, User
+from accountapp.models import OneTimePassword, User, Learner
 from accountapp.serializers import UserRegistrationSerializer, VerifyUserEmailSerializer, LoginSerializer, \
     SetNewPasswordSerializer, \
-    PasswordResetRequestSerializer, LogoutUserSerialezer, ChangePasswordSerializer, ChangePasswordRequestSerializer
+    PasswordResetRequestSerializer, LogoutUserSerializer, ChangePasswordSerializer, ChangePasswordRequestSerializer
 from accountapp.utils import send_code_to_user
 from rest_framework.response import Response
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
@@ -30,11 +29,12 @@ class RegisterView(GenericAPIView):
         user_data = request.data
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            user=serializer.data
-            send_code_to_user(user_data['email'])
+            user = serializer.save()
+            Learner.objects.create(user=user)
+            send_code_to_user(user.email)
+            serializer_data = serializer.data
             return Response({
-                "data": user,
+                "data": serializer_data,
                 "message": "User created successfully",
             },status=status.HTTP_201_CREATED)
         return Response({serializer.errors},status=status.HTTP_400_BAD_REQUEST)
@@ -211,7 +211,7 @@ class ChangePasswordView(UpdateAPIView):
         return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
 
 class LogoutUserView(GenericAPIView):
-    serializer_class=LogoutUserSerialezer
+    serializer_class=LogoutUserSerializer
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -297,4 +297,3 @@ class VerifyChangePasswordOTPView(GenericAPIView):
             return Response({
                 "message": "Invalid OTP"
             }, status=status.HTTP_400_BAD_REQUEST)
-

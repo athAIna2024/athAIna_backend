@@ -84,12 +84,19 @@ WSGI_APPLICATION = 'athAIna_backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': env('DB_ENGINE'),
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': env('DB_HOST'),
+        'PORT': env('DB_PORT'),
     }
 }
+
+
 AUTH_USER_MODEL = 'accountapp.User'
 
 REST_FRAMEWORK = {
@@ -107,18 +114,6 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-# For now, we will not setup the database connection.
-# Since it is a development environment.
-# DATABASE = {
-#     'default': {
-#         'ENGINE': env('DB_ENGINE'),
-#         'NAME': env('DB_NAME'),
-#         'USER': env('DB_USER'),
-#         'PASSWORD': env('DB_PASSWORD'),
-#         'HOST': env('DB_HOST'),
-#         'PORT': env('DB_PORT'),
-#     }
-# }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -172,3 +167,23 @@ EMAIL_HOST_USER=env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD=env('EMAIL_HOST_PASSWORD')
 EMAIL_PORT=env('EMAIL_PORT')
 EMAIL_USE_TLS=env('EMAIL_USE_TLS')
+
+CELERY_CONFIG = {
+    'CELERY_BROKER_URL': env('CELERY_BROKER_URL'),
+    'CELERY_RESULT_BACKEND': env('CELERY_RESULT_BACKEND'),
+    'CELERY_ACCEPT_CONTENT': env('CELERY_ACCEPT_CONTENT'),
+    'CELERY_TASK_SERIALIZER': env('CELERY_TASK_SERIALIZER'),
+    'CELERY_RESULT_SERIALIZER': env('CELERY_RESULT_SERIALIZER'),
+    'CELERY_TIMEZONE': env('CELERY_TIMEZONE'),
+    'CELERY_RESULT_EXPIRES': env('CELERY_RESULT_EXPIRES'),
+}
+
+CACHES = {
+    "default": {
+        "BACKEND": 'django_redis.cache.RedisCache',
+        "LOCATION": env('REDIS_URL'),
+        "OPTIONS": {
+            "CLIENT_CLASS": 'django_redis.client.DefaultClient',
+        }
+    }
+}

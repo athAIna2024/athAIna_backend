@@ -18,3 +18,6 @@ class Flashcard(SoftDeleteModel):
        return self.question
 
 
+    class Meta:
+        db_table = 'flashcards'
+
