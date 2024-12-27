@@ -62,7 +62,7 @@ class VerifyUserEmail(GenericAPIView):
             }, status=status.HTTP_200_OK)
         except OneTimePassword.DoesNotExist:
             return Response({
-                "message": "Invalid OTP"
+                "message": "Invalid or expired OTP"
             }, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginUserView(GenericAPIView):
@@ -183,7 +183,7 @@ class OTPVerificationView(GenericAPIView):
             }, status=status.HTTP_200_OK)
         except OneTimePassword.DoesNotExist:
             return Response({
-                "msg": "Invalid OTP"
+                "msg": "Invalid or expired OTP"
             }, status=status.HTTP_400_BAD_REQUEST)
 
 class PasswordChangeView(GenericAPIView):
@@ -273,7 +273,7 @@ class VerifyPasswordChangeOTPView(GenericAPIView):
             }, status=status.HTTP_200_OK)
         except OneTimePassword.DoesNotExist:
             return Response({
-                "message": "Invalid OTP"
+                "message": "Invalid or expired OTP"
             }, status=status.HTTP_400_BAD_REQUEST)
 
 class VerifyChangePasswordOTPView(GenericAPIView):
@@ -295,5 +295,5 @@ class VerifyChangePasswordOTPView(GenericAPIView):
             }, status=status.HTTP_200_OK)
         except OneTimePassword.DoesNotExist:
             return Response({
-                "message": "Invalid OTP"
+                "message": "Invalid or expired OTP"
             }, status=status.HTTP_400_BAD_REQUEST)

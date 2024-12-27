@@ -53,6 +53,20 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 class VerifyUserEmailSerializer(serializers.Serializer):
     otp = serializers.CharField(max_length=6)
 
+    def validate(self, attrs):
+        otp = attrs.get('otp')
+        user = self.context['request'].user
+
+        try:
+            otp_instance = OneTimePassword.objects.get(user=user, code=otp)
+        except OneTimePassword.DoesNotExist:
+            raise serializers.ValidationError('Invalid or expired OTP')
+
+        # Delete the OTP after successful validation
+        otp_instance.delete()
+
+        return attrs
+
 class LoginSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(max_length=255, min_length=6)
     password = serializers.CharField(max_length=69, min_length=8, write_only=True)
