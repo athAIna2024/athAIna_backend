@@ -54,6 +54,7 @@ class VerifyUserEmail(GenericAPIView):
             if not user.is_verified:
                 user.is_verified = True
                 user.save()
+                user_code_obj.delete()
                 return Response({
                     "message": "Email verified successfully"
                 }, status=status.HTTP_200_OK)
@@ -62,9 +63,8 @@ class VerifyUserEmail(GenericAPIView):
             }, status=status.HTTP_200_OK)
         except OneTimePassword.DoesNotExist:
             return Response({
-                "message": "Invalid or expired OTP"
+                "message": "Invalid OTP"
             }, status=status.HTTP_400_BAD_REQUEST)
-
 class LoginUserView(GenericAPIView):
     serializer_class = LoginSerializer
     def post(self, request):
@@ -106,6 +106,7 @@ class PasswordResetConfirm(GenericAPIView):
                 return Response({
                     "msg": "Invalid OTP"
                 }, status=status.HTTP_400_BAD_REQUEST)
+            otp_obj.delete()  # Delete the OTP after successful verification
             return Response({
                 "success": True,
                 "msg": "Credentials Valid",
@@ -176,6 +177,7 @@ class OTPVerificationView(GenericAPIView):
             otp_obj = OneTimePassword.objects.get(code=otp_code)
             user = otp_obj.user
             refresh = RefreshToken.for_user(user)
+            otp_obj.delete()  # Delete the OTP after successful verification
             return Response({
                 "success": True,
                 "msg": "OTP is valid",
@@ -267,6 +269,7 @@ class VerifyPasswordChangeOTPView(GenericAPIView):
             current_site = get_current_site(request).domain
             relative_link = reverse('set-new-password', kwargs={'uidb64': uidb64, 'token': token})
             abslink = f"http://{current_site}{relative_link}"
+            otp_obj.delete()  # Delete the OTP after successful verification
             return Response({
                 "message": "OTP verified successfully",
                 "password_reset_link": abslink
@@ -289,6 +292,7 @@ class VerifyChangePasswordOTPView(GenericAPIView):
             current_site = get_current_site(request).domain
             relative_link = reverse('set-change-password', kwargs={'uidb64': uidb64, 'token': token})
             abslink = f"http://{current_site}{relative_link}"
+            otp_obj.delete()  # Delete the OTP after successful verification
             return Response({
                 "message": "OTP verified successfully",
                 "password_reset_link": abslink
