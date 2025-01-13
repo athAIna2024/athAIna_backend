@@ -35,11 +35,20 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         if len(password) < 8:
             raise serializers.ValidationError('Password must be longer than 8 characters')
 
+        if password.isdigit():
+            raise serializers.ValidationError('Password cannot be completely numeric')
+
         if not re.search(r'\d', password):
             raise serializers.ValidationError('Password must contain at least one number')
 
-        if password.isdigit():
-            raise serializers.ValidationError('Password cannot be completely numeric')
+        if not re.search(r'[A-Z]', password):
+            raise serializers.ValidationError('Password must contain at least one uppercase letter')
+
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+            raise serializers.ValidationError('Password must contain at least one special character')
+
+
+
 
         return attrs
 
@@ -144,12 +153,19 @@ class SetNewPasswordSerializer(serializers.Serializer):
 
         if len(password) < 8:
             raise serializers.ValidationError('Password must be longer than 8 characters')
+        if password.isdigit():
+            raise serializers.ValidationError('Password cannot be entirely numeric')
 
         if not re.search(r'\d', password):
             raise serializers.ValidationError('Password must contain at least one number')
 
-        if password.isdigit():
-            raise serializers.ValidationError('Password cannot be entirely numeric')
+        if not re.search(r'[A-Z]', password):
+            raise serializers.ValidationError('Password must contain at least one uppercase letter')
+
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+            raise serializers.ValidationError('Password must contain at least one special character')
+
+
 
         return attrs
 
@@ -176,11 +192,16 @@ class ChangePasswordSerializer(serializers.Serializer):
         if len(new_password) < 8:
             raise serializers.ValidationError('Password must be longer than 8 characters')
 
-        if not re.search(r'\d', new_password):
-            raise serializers.ValidationError('Password must contain at least one number')
-
         if new_password.isdigit():
             raise serializers.ValidationError('Password cannot be entirely numeric')
+
+        if not re.search(r'\d', new_password):
+            raise serializers.ValidationError('Password must contain at least one number')
+        if not re.search(r'[A-Z]', new_password):
+            raise serializers.ValidationError('Password must contain at least one uppercase letter')
+
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', new_password):
+            raise serializers.ValidationError('Password must contain at least one special character')
 
         if not user.check_password(old_password):
             raise serializers.ValidationError('Old password is incorrect')
