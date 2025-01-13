@@ -36,8 +36,8 @@ class RegisterView(GenericAPIView):
             return Response({
                 "data": serializer_data,
                 "message": "User created successfully",
-            },status=status.HTTP_201_CREATED)
-        return Response({serializer.errors},status=status.HTTP_400_BAD_REQUEST)
+            }, status=status.HTTP_201_CREATED)
+        return Response({serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 class VerifyUserEmail(GenericAPIView):
     serializer_class = VerifyUserEmailSerializer
@@ -70,6 +70,11 @@ class LoginUserView(GenericAPIView):
     def post(self, request):
         serializer = self.serializer_class(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
+        response = Response(serializer.data, status=status.HTTP_200_OK)
+        access_token = serializer.data.get('access_token')
+        refresh_token = serializer.data.get('refresh_token')
+        response.set_cookie('access_token', access_token, httponly=True, max_age=3600)  # 1 hour
+        response.set_cookie('refresh_token', refresh_token, httponly=True, max_age=1209600)  # 30 days
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class TestAuthView(GenericAPIView):
@@ -178,11 +183,14 @@ class OTPVerificationView(GenericAPIView):
             user = otp_obj.user
             refresh = RefreshToken.for_user(user)
             otp_obj.delete()  # Delete the OTP after successful verification
-            return Response({
+            response = Response({
                 "success": True,
                 "msg": "OTP is valid",
                 "access": str(refresh.access_token),
             }, status=status.HTTP_200_OK)
+            response.set_cookie('access_token', str(refresh.access_token), httponly=True)
+            response.set_cookie('refresh_token', str(refresh), httponly=True)
+            return response
         except OneTimePassword.DoesNotExist:
             return Response({
                 "msg": "Invalid or expired OTP"
@@ -222,6 +230,7 @@ class LogoutUserView(GenericAPIView):
         serializer.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    # Add deletion of cookies later, because we have to blacklist used tokens instead of deleting them.
 
 class DeleteUserView(GenericAPIView):
     permission_classes = [IsAuthenticated]

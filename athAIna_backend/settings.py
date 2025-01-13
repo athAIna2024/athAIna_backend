@@ -56,7 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
+    'accountapp.middleware.TokenFromCookieMiddleware',
     'corsheaders.middleware.CorsMiddleware',
 ]
 
@@ -198,7 +198,7 @@ CACHES = {
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
-SESSION_COOKIE_AGE = 2592000 # 30 days
+SESSION_COOKIE_AGE = 1209600 # 2 weeks
 
 SESSION_COOKIE_NAME = 'athAIna_session'
 
