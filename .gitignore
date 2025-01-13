@@ -30,3 +30,4 @@ flashcardapp/migrations/0002_flashcard_deleted_at_flashcard_is_ai_generated_and_
 reportapp/migrations/0001_initial.py
 studysetapp/migrations/0001_initial.py
 testapp/migrations/0001_initial.py
+athAIna_backend/settings.py

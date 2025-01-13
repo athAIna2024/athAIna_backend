@@ -194,3 +194,12 @@ CACHES = {
         }
     }
 }
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+SESSION_COOKIE_AGE = 2592000 # 30 days
+
+SESSION_COOKIE_NAME = 'athAIna_session'
+
+CSRF_COOKIE_NAME = 'athAIna_csrfToken'
