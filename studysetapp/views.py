@@ -110,21 +110,30 @@ class UpdateStudySet(generics.RetrieveUpdateAPIView):
 
 class StudySetSearchView(APIView):
     def get(self, request, *args, **kwargs):
-        query = request.query_params.get('q', '')
+        title = request.query_params.get('title')
+        description = request.query_params.get('description')
+        subject = request.query_params.get('subject')
         learner_id = request.query_params.get('learner_id')
 
-        if query:
-            study_sets = StudySet.objects.all()
-            if learner_id:
-                try:
-                    learner = Learner.objects.get(id=learner_id)
-                    study_sets = study_sets.filter(learner_instance=learner)
-                except Learner.DoesNotExist:
-                    return Response({"message": "Learner not found."}, status=HTTP_404_NOT_FOUND)
+        study_sets = StudySet.objects.all()
 
-            study_sets = study_sets.filter(
-                Q(title__icontains=query) | Q(description__icontains=query)
-            )
+        if learner_id:
+            try:
+                learner = Learner.objects.get(id=learner_id)
+                study_sets = study_sets.filter(learner_instance=learner)
+            except Learner.DoesNotExist:
+                return Response({"message": "Learner not found."}, status=HTTP_404_NOT_FOUND)
+
+        query = Q()
+        if title:
+            query |= Q(title__icontains=title)
+        if description:
+            query |= Q(description__icontains=description)
+        if subject:
+            query |= Q(subjects__icontains=subject)
+
+        if query:
+            study_sets = study_sets.filter(query)
             serializer = StudySetSerializer(study_sets, many=True)
             return Response(serializer.data)
 
