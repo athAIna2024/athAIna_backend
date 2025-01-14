@@ -15,7 +15,6 @@ def generate_flashcards_task(extracted_data):
         return generate_data_for_flashcards(extracted_data)
     except Exception as e:
         raise Retry(exc=e)
-
 @shared_task
 def clean_data_for_flashcard_creation_task(valid_flashcards, studyset_id):
     return clean_data_for_flashcard_creation(valid_flashcards, studyset_id)

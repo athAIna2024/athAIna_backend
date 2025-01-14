@@ -36,8 +36,8 @@ class RegisterView(GenericAPIView):
             return Response({
                 "data": serializer_data,
                 "message": "User created successfully",
-            },status=status.HTTP_201_CREATED)
-        return Response({serializer.errors},status=status.HTTP_400_BAD_REQUEST)
+            }, status=status.HTTP_201_CREATED)
+        return Response({serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 class VerifyUserEmail(GenericAPIView):
     serializer_class = VerifyUserEmailSerializer
@@ -54,6 +54,7 @@ class VerifyUserEmail(GenericAPIView):
             if not user.is_verified:
                 user.is_verified = True
                 user.save()
+                user_code_obj.delete()
                 return Response({
                     "message": "Email verified successfully"
                 }, status=status.HTTP_200_OK)
@@ -64,12 +65,16 @@ class VerifyUserEmail(GenericAPIView):
             return Response({
                 "message": "Invalid OTP"
             }, status=status.HTTP_400_BAD_REQUEST)
-
 class LoginUserView(GenericAPIView):
     serializer_class = LoginSerializer
     def post(self, request):
         serializer = self.serializer_class(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
+        response = Response(serializer.data, status=status.HTTP_200_OK)
+        access_token = serializer.data.get('access_token')
+        refresh_token = serializer.data.get('refresh_token')
+        response.set_cookie('access_token', access_token, httponly=True, max_age=3600)  # 1 hour
+        response.set_cookie('refresh_token', refresh_token, httponly=True, max_age=1209600)  # 30 days
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class TestAuthView(GenericAPIView):
@@ -106,6 +111,7 @@ class PasswordResetConfirm(GenericAPIView):
                 return Response({
                     "msg": "Invalid OTP"
                 }, status=status.HTTP_400_BAD_REQUEST)
+            otp_obj.delete()  # Delete the OTP after successful verification
             return Response({
                 "success": True,
                 "msg": "Credentials Valid",
@@ -176,14 +182,18 @@ class OTPVerificationView(GenericAPIView):
             otp_obj = OneTimePassword.objects.get(code=otp_code)
             user = otp_obj.user
             refresh = RefreshToken.for_user(user)
-            return Response({
+            otp_obj.delete()  # Delete the OTP after successful verification
+            response = Response({
                 "success": True,
                 "msg": "OTP is valid",
                 "access": str(refresh.access_token),
             }, status=status.HTTP_200_OK)
+            response.set_cookie('access_token', str(refresh.access_token), httponly=True)
+            response.set_cookie('refresh_token', str(refresh), httponly=True)
+            return response
         except OneTimePassword.DoesNotExist:
             return Response({
-                "msg": "Invalid OTP"
+                "msg": "Invalid or expired OTP"
             }, status=status.HTTP_400_BAD_REQUEST)
 
 class PasswordChangeView(GenericAPIView):
@@ -220,6 +230,7 @@ class LogoutUserView(GenericAPIView):
         serializer.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    # Add deletion of cookies later, because we have to blacklist used tokens instead of deleting them.
 
 class DeleteUserView(GenericAPIView):
     permission_classes = [IsAuthenticated]
@@ -267,13 +278,14 @@ class VerifyPasswordChangeOTPView(GenericAPIView):
             current_site = get_current_site(request).domain
             relative_link = reverse('set-new-password', kwargs={'uidb64': uidb64, 'token': token})
             abslink = f"http://{current_site}{relative_link}"
+            otp_obj.delete()  # Delete the OTP after successful verification
             return Response({
                 "message": "OTP verified successfully",
                 "password_reset_link": abslink
             }, status=status.HTTP_200_OK)
         except OneTimePassword.DoesNotExist:
             return Response({
-                "message": "Invalid OTP"
+                "message": "Invalid or expired OTP"
             }, status=status.HTTP_400_BAD_REQUEST)
 
 class VerifyChangePasswordOTPView(GenericAPIView):
@@ -289,11 +301,12 @@ class VerifyChangePasswordOTPView(GenericAPIView):
             current_site = get_current_site(request).domain
             relative_link = reverse('set-change-password', kwargs={'uidb64': uidb64, 'token': token})
             abslink = f"http://{current_site}{relative_link}"
+            otp_obj.delete()  # Delete the OTP after successful verification
             return Response({
                 "message": "OTP verified successfully",
                 "password_reset_link": abslink
             }, status=status.HTTP_200_OK)
         except OneTimePassword.DoesNotExist:
             return Response({
-                "message": "Invalid OTP"
+                "message": "Invalid or expired OTP"
             }, status=status.HTTP_400_BAD_REQUEST)
