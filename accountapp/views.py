@@ -8,6 +8,7 @@ from rest_framework.generics import GenericAPIView, UpdateAPIView, DestroyAPIVie
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from accountapp.models import OneTimePassword, User, Learner
 from accountapp.serializers import UserRegistrationSerializer, VerifyUserEmailSerializer, LoginSerializer, \
@@ -221,16 +222,20 @@ class ChangePasswordView(UpdateAPIView):
         return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
 
 class LogoutUserView(GenericAPIView):
-    serializer_class=LogoutUserSerializer
+    serializer_class = LogoutUserSerializer
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    # Add deletion of cookies later, because we have to blacklist used tokens instead of deleting them.
+        try:
+            refresh_token = request.data["refresh"]
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            response = Response(status=status.HTTP_204_NO_CONTENT)
+            response.delete_cookie('access_token')
+            response.delete_cookie('refresh_token')
+            return response
+        except Exception as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 class DeleteUserView(GenericAPIView):
     permission_classes = [IsAuthenticated]
@@ -310,3 +315,17 @@ class VerifyChangePasswordOTPView(GenericAPIView):
             return Response({
                 "message": "Invalid or expired OTP"
             }, status=status.HTTP_400_BAD_REQUEST)
+
+class CustomTokenRefreshView(TokenRefreshView):
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == status.HTTP_200_OK:
+            try:
+                old_refresh_token = request.data.get('refresh')
+                if old_refresh_token:
+                    old_token = RefreshToken(old_refresh_token)
+                    old_token.blacklist()
+                response.data['message'] = 'Token refreshed successfully'
+            except Exception as e:
+                return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
+        return response
