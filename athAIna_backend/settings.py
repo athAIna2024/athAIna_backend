@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
+    'rest_framework_simplejwt.token_blacklist'
 
 ]
 
@@ -55,7 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
+    'accountapp.middleware.TokenFromCookieMiddleware',
     'corsheaders.middleware.CorsMiddleware',
 ]
 
@@ -83,17 +84,23 @@ WSGI_APPLICATION = 'athAIna_backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-
 DATABASES = {
     'default': {
-        'ENGINE': env('DB_ENGINE'),
-        'NAME': env('DB_NAME'),
-        'USER': env('DB_USER'),
-        'PASSWORD': env('DB_PASSWORD'),
-        'HOST': env('DB_HOST'),
-        'PORT': env('DB_PORT'),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': env('DB_ENGINE'),
+#         'NAME': env('DB_NAME'),
+#         'USER': env('DB_USER'),
+#         'PASSWORD': env('DB_PASSWORD'),
+#         'HOST': env('DB_HOST'),
+#         'PORT': env('DB_PORT'),
+#     }
+# }
 
 
 AUTH_USER_MODEL = 'accountapp.User'
@@ -155,7 +162,8 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-MEDIA_URL = env("MEDIA_URL_LOCAL")
+# MEDIA_URL = env("MEDIA_URL_LOCAL")
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / env("MEDIA_ROOT_LOCAL")
 
 # CORS
@@ -186,3 +194,12 @@ CACHES = {
         }
     }
 }
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+SESSION_COOKIE_AGE = 1209600 # 2 weeks
+
+SESSION_COOKIE_NAME = 'athAIna_session'
+
+CSRF_COOKIE_NAME = 'athAIna_csrfToken'
