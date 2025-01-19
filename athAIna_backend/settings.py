@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'studysetapp.apps.StudysetappConfig',
     'reportapp.apps.ReportappConfig',
     'contactinquiryapp.apps.ContactinquiryappConfig',
+    'faqapp.apps.FaqappConfig',
 
     'rest_framework',
     'rest_framework.authtoken',

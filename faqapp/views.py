@@ -21,13 +21,13 @@ class CreateFAQ(generics.CreateAPIView):
             return Response({
                 'message': 'FAQ created successfully.',
                 'data': serializer.data,
-                'success': True
+                'successful': True
             }, status=HTTP_201_CREATED)
         else:
             return Response({
                 'message': 'FAQ could not be created, please try again.',
                 'errors': serializer.errors,
-                'success': False
+                'successful': False
             }, status=HTTP_400_BAD_REQUEST)
 
 class UpdateAndDeleteFAQ(generics.RetrieveUpdateDestroyAPIView):
@@ -41,7 +41,7 @@ class UpdateAndDeleteFAQ(generics.RetrieveUpdateDestroyAPIView):
         except Http404:
             return Response({
                 'message': 'FAQ not found.',
-                'success': False
+                'successful': False
             }, status=HTTP_404_NOT_FOUND)
 
     def perform_update(self, serializer):
@@ -58,13 +58,13 @@ class UpdateAndDeleteFAQ(generics.RetrieveUpdateDestroyAPIView):
             return Response({
                 'message': 'FAQ updated successfully.',
                 'data': serializer.data,
-                'success': True
+                'successful': True
             }, status=HTTP_201_CREATED)
         else:
             return Response({
                 'message': 'FAQ could not be updated, please try again.',
                 'errors': serializer.errors,
-                'success': False
+                'successful': False
             }, status=HTTP_400_BAD_REQUEST)
 
     def perform_delete(self, serializer):
@@ -79,12 +79,12 @@ class UpdateAndDeleteFAQ(generics.RetrieveUpdateDestroyAPIView):
             return Response({
                 'message': 'FAQ deleted successfully.',
                 'data': serializer.data,
-                'success': True
+                'successful': True
             }, status=HTTP_200_OK)
         else:
             return Response({
                 'message': 'FAQ could not be deleted, please try again.',
-                'success': False
+                'successful': False
             }, status=HTTP_400_BAD_REQUEST)
 
 class ListOfFAQs(generics.ListAPIView):
@@ -99,11 +99,11 @@ class ListOfFAQs(generics.ListAPIView):
             return Response({
                 'message': 'No FAQs found.',
                 'data': serializer.data,
-                'success': False
+                'successful': False
             }, status=HTTP_404_NOT_FOUND)
         else:
             return Response({
                 'message': 'FAQs retrieved successfully.',
                 'data': serializer.data,
-                'success': True
+                'successful': True
             }, status=HTTP_200_OK)
