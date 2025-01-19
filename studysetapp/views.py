@@ -17,6 +17,7 @@ from studysetapp.paginators import StandardPaginationStudySets
 from rest_framework.views import APIView
 from django.db.models import Q
 
+from accountapp.models import User
 # Create your views here.
 
 class CreateStudySet(generics.CreateAPIView):
@@ -106,6 +107,38 @@ class UpdateStudySet(generics.RetrieveUpdateAPIView):
                 'message': 'Study Set could not be updated, please try again.',
                 'errors': serializer.errors
             }, status=HTTP_400_BAD_REQUEST)
+
+class ListOfStudySet(generics.ListAPIView):
+    serializer_class = StudySetSerializer
+    def get_queryset(self):
+        # user = self.request.user
+        user = User.objects.get(id=1) # Remove this line and uncomment the above line (FOR TESTING)
+        # if user.is_authenticated: ## Uncomment this line (FOR TESTING)
+        if user:
+            try:
+                # learner = Learner.objects.get(user=user)
+                learner = Learner.objects.get(user=user)
+                return StudySet.objects.filter(learner_instance=learner).order_by('created_at')
+            except Learner.DoesNotExist:
+                raise Http404("Learner not found")
+        return StudySet.objects.none()
+
+    def get(self, request, *args, **kwargs):
+        studysets = self.get_queryset()
+        serializer = self.get_serializer(studysets, many=True)
+
+        if not serializer.data:
+            return Response({
+                'message': 'No Study Sets found. Please create one.',
+                'data': serializer.data,
+                'successful': False,
+            }, status=HTTP_200_OK)
+        else:
+            return Response({
+                'message': 'Study Sets found.',
+                'data': serializer.data,
+                'successful': True,
+            }, status=HTTP_200_OK)
 
 
 class StudySetSearchView(APIView):
