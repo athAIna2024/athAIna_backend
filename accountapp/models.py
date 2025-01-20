@@ -10,9 +10,20 @@ from django.utils.translation import gettext_lazy as _
 from accountapp.managers import UserManager
 
 class User(AbstractBaseUser, PermissionsMixin):
+    UNVERIFIED = 'unverified'
+    VERIFIED = 'verified'
+    INACTIVE = 'inactive'
+    STATUS_CHOICES = [
+        (UNVERIFIED, _('unverified')),
+        (VERIFIED, _('verified')),
+        (INACTIVE, _('inactive')),
+    ]
+
+
+
     email = models.EmailField(max_length=255, unique=True, verbose_name=_('email_address'))
     id = models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
-    is_active = models.BooleanField(default=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=UNVERIFIED)
     date_joined = models.DateTimeField(auto_now_add=True)
     last_login = models.DateTimeField(auto_now=True)
     archive_date = models.DateTimeField(auto_now=False, null=True, blank=True)
