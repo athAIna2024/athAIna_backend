@@ -7,7 +7,9 @@ from .validators import validate_file_extension
 class StudySetSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudySet
-        fields = ['learner_instance', 'title', 'description', 'subjects']
+        fields = ['id', 'learner_instance', 'title', 'description', 'subjects']
+
+    id = serializers.IntegerField(read_only=True)
 
     learner_instance = serializers.PrimaryKeyRelatedField(
         queryset=Learner.objects.all(),
