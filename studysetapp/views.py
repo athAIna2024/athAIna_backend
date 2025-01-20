@@ -122,7 +122,7 @@ class ListOfStudySet(generics.ListAPIView):
         if user:
             try:
                 learner = Learner.objects.get(user=user)
-                return StudySet.objects.filter(learner_instance=learner).order_by('created_at')
+                return StudySet.objects.filter(learner_instance=learner).order_by('-created_at')
             except Learner.DoesNotExist:
                 raise Http404("Learner not found")
         return StudySet.objects.none()
