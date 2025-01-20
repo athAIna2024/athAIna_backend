@@ -76,7 +76,6 @@ class LibraryOfStudySet(generics.ListAPIView):
             response.status_code = HTTP_200_OK
             return response
 class UpdateStudySet(generics.RetrieveUpdateAPIView):
-
     queryset = StudySet.objects.all()
     serializer_class = UpdateStudySetSerializer
     lookup_field = 'id'
@@ -88,12 +87,12 @@ class UpdateStudySet(generics.RetrieveUpdateAPIView):
             return super().get_object()
         except Http404:
             raise NotFound({"detail": "No Study Set found with ID {0}".format(self.kwargs.get('id'))})
+
     def perform_update(self, serializer):
         title = serializer.validated_data.get('title')
         description = serializer.validated_data.get('description')
         subjects = serializer.validated_data.get('subjects')
-        studyset_id = serializer.validated_data.get('studyset_id')
-        serializer.save(title=title, description=description, subjects=subjects, studyset_id=studyset_id)
+        serializer.save(title=title, description=description, subjects=subjects)
 
     def put(self, request, *args, **kwargs):
         studyset = self.get_object()

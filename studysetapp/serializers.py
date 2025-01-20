@@ -19,7 +19,7 @@ class StudySetSerializer(serializers.ModelSerializer):
         })
 
     title = serializers.CharField(
-        max_length=100,
+        max_length=60,
         required=True,
         allow_blank=False,
         error_messages={
@@ -29,7 +29,7 @@ class StudySetSerializer(serializers.ModelSerializer):
         })
 
     description = serializers.CharField(
-        max_length=300,
+        max_length=100,
         required=True,
         allow_blank=False,
         error_messages={
@@ -51,7 +51,7 @@ class UpdateStudySetSerializer(serializers.ModelSerializer):
         fields = ['title', 'description', 'subjects']
 
     title = serializers.CharField(
-        max_length=100,
+        max_length=60,
         required=True,
         allow_blank=False,
         error_messages={
@@ -61,7 +61,7 @@ class UpdateStudySetSerializer(serializers.ModelSerializer):
         })
 
     description = serializers.CharField(
-        max_length=300,
+        max_length=100,
         required=True,
         allow_blank=False,
         error_messages={
