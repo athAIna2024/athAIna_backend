@@ -111,11 +111,12 @@ class UpdateStudySet(generics.RetrieveUpdateAPIView):
 class ListOfStudySet(generics.ListAPIView):
     serializer_class = StudySetSerializer
     def get_queryset(self):
-        user = self.request.user
-        # if user.is_authenticated: ## Uncomment this line (FOR TESTING)
+        user_id = self.request.query_params.get('user_id') # For authentication, the code will be different
+        if user_id:
+            user = User.objects.get(id=user_id)
+        # if user.is_authenticated: ## Uncomment this line (FOR TESTING),
         if user:
             try:
-                # learner = Learner.objects.get(user=user)
                 learner = Learner.objects.get(user=user)
                 return StudySet.objects.filter(learner_instance=learner).order_by('created_at')
             except Learner.DoesNotExist:
