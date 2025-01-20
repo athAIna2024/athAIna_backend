@@ -27,8 +27,8 @@ class CreateStudySet(generics.CreateAPIView):
         learner_instance = serializer.validated_data.get('learner_instance')
         title = serializer.validated_data.get('title')
         description = serializer.validated_data.get('description')
-        subjects = serializer.validated_data.get('subjects')
-        serializer.save(learner_instance=learner_instance, title=title, description=description, subjects=subjects)
+        subject = serializer.validated_data.get('subject')
+        serializer.save(learner_instance=learner_instance, title=title, description=description, subject=subject)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -91,8 +91,8 @@ class UpdateStudySet(generics.RetrieveUpdateAPIView):
     def perform_update(self, serializer):
         title = serializer.validated_data.get('title')
         description = serializer.validated_data.get('description')
-        subjects = serializer.validated_data.get('subjects')
-        serializer.save(title=title, description=description, subjects=subjects)
+        subject = serializer.validated_data.get('subject')
+        serializer.save(title=title, description=description, subject=subject)
 
     def put(self, request, *args, **kwargs):
         studyset = self.get_object()
@@ -166,7 +166,7 @@ class StudySetSearchView(APIView):
         if description:
             query |= Q(description__icontains=description)
         if subject:
-            query |= Q(subjects__icontains=subject)
+            query |= Q(subject__icontains=subject)
 
         if query:
             study_sets = study_sets.filter(query)
@@ -181,7 +181,7 @@ class StudySetFilterBySubjectView(generics.ListAPIView):
     def get_queryset(self):
         subject = self.request.query_params.get('q', '')
         if subject:
-            return StudySet.objects.filter(subjects=subject).order_by('created_at')
+            return StudySet.objects.filter(subject=subject).order_by('created_at')
         return StudySet.objects.none()
 
 class DeleteStudySet(generics.RetrieveDestroyAPIView):
