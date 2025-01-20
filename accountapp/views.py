@@ -52,7 +52,7 @@ class VerifyUserEmail(GenericAPIView):
         try:
             user_code_obj = OneTimePassword.objects.get(code=otpCode)
             user = user_code_obj.user
-            if not user.status == user.UNVERIFIED:
+            if user.status == user.UNVERIFIED:
                 user.status = user.VERIFIED
                 user.save()
                 user_code_obj.delete()
