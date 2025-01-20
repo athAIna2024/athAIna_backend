@@ -28,7 +28,7 @@ class CreateStudySet(generics.CreateAPIView):
         title = serializer.validated_data.get('title')
         description = serializer.validated_data.get('description')
         subjects = serializer.validated_data.get('subjects')
-        serializer.save(title=title, description=description, subjects=subjects)
+        serializer.save(learner_instance=learner_instance, title=title, description=description, subjects=subjects)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -36,12 +36,14 @@ class CreateStudySet(generics.CreateAPIView):
             self.perform_create(serializer)
             return Response({
                 'message': 'StudySet created successfully.',
-                'data': serializer.data
+                'data': serializer.data,
+                'successful': True
             }, status=HTTP_201_CREATED)
         else:
             return Response({
                 'message': 'StudySet could not be created, please try again.',
-                'errors': serializer.errors
+                'errors': serializer.errors,
+                'successful': False
             }, status=HTTP_400_BAD_REQUEST)
 
 class LibraryOfStudySet(generics.ListAPIView):
@@ -74,12 +76,14 @@ class LibraryOfStudySet(generics.ListAPIView):
             response.status_code = HTTP_200_OK
             return response
 class UpdateStudySet(generics.RetrieveUpdateAPIView):
+
     queryset = StudySet.objects.all()
     serializer_class = UpdateStudySetSerializer
     lookup_field = 'id'
 
     # Verify if StudySet learner_instance should be updated or be checked through authentication
     def get_object(self):
+        # ASSOCIATION TO LEARNER_INSTANCE IS MISSING
         try:
             return super().get_object()
         except Http404:
