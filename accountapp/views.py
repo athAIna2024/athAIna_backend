@@ -52,8 +52,8 @@ class VerifyUserEmail(GenericAPIView):
         try:
             user_code_obj = OneTimePassword.objects.get(code=otpCode)
             user = user_code_obj.user
-            if not user.is_verified:
-                user.is_verified = True
+            if not user.status == user.UNVERIFIED:
+                user.status = user.VERIFIED
                 user.save()
                 user_code_obj.delete()
                 return Response({
@@ -242,7 +242,7 @@ class DeleteUserView(GenericAPIView):
 
     def delete(self, request, *args, **kwargs):
         user = request.user
-        user.is_active = False
+        user.status = user.INACTIVE
         user.archive_date = timezone.now()
         user.save()
         return Response({

@@ -18,9 +18,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         (VERIFIED, _('verified')),
         (INACTIVE, _('inactive')),
     ]
-
-
-
     email = models.EmailField(max_length=255, unique=True, verbose_name=_('email_address'))
     id = models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=UNVERIFIED)
