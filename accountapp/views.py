@@ -125,28 +125,28 @@ class TestAuthView(GenericAPIView):
 #                 "msg": "Invalid OTP or token"
 #             }, status=status.HTTP_400_BAD_REQUEST)
 
-# class SetNewPassword(GenericAPIView):
-#     serializer_class = SetNewPasswordSerializer
-#
-#     def patch(self, request, uidb64, token):
-#         try:
-#             user_id = smart_str(urlsafe_base64_decode(uidb64))
-#             user = User.objects.get(id=user_id)
-#             if not PasswordResetTokenGenerator().check_token(user, token):
-#                 return Response({
-#                     "message": "Token is not valid, please request a new one"
-#                 }, status=status.HTTP_401_UNAUTHORIZED)
-#             serializer = self.serializer_class(data=request.data)
-#             serializer.is_valid(raise_exception=True)
-#             user.set_password(serializer.validated_data['password'])
-#             user.save()
-#             return Response({
-#                 "message": "Password reset successful"
-#             }, status=status.HTTP_200_OK)
-#         except (DjangoUnicodeDecodeError, User.DoesNotExist):
-#             return Response({
-#                 "message": "Invalid token"
-#             }, status=status.HTTP_400_BAD_REQUEST)
+class SetNewPassword(GenericAPIView):
+    serializer_class = SetNewPasswordSerializer
+
+    def patch(self, request, uidb64, token):
+        try:
+            user_id = smart_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(id=user_id)
+            if not PasswordResetTokenGenerator().check_token(user, token):
+                return Response({
+                    "message": "Token is not valid, please request a new one"
+                }, status=status.HTTP_401_UNAUTHORIZED)
+            serializer = self.serializer_class(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            user.set_password(serializer.validated_data['password'])
+            user.save()
+            return Response({
+                "message": "Password reset successful"
+            }, status=status.HTTP_200_OK)
+        except (DjangoUnicodeDecodeError, User.DoesNotExist):
+            return Response({
+                "message": "Invalid token"
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -269,7 +269,7 @@ class ChangePasswordRequestView(GenericAPIView):
         return Response({
             "message": "An OTP has been sent to your email to verify your identity"
         }, status=status.HTTP_200_OK)
-
+# change password
 class VerifyPasswordChangeOTPView(GenericAPIView):
     serializer_class = VerifyUserEmailSerializer
 
@@ -293,6 +293,7 @@ class VerifyPasswordChangeOTPView(GenericAPIView):
                 "message": "Invalid or expired OTP"
             }, status=status.HTTP_400_BAD_REQUEST)
 
+#forget password
 class VerifyChangePasswordOTPView(GenericAPIView):
     serializer_class = VerifyUserEmailSerializer
 

@@ -1,9 +1,9 @@
 from django.urls import path
 from . import views
-from .views import RegisterView, VerifyUserEmail, LoginUserView, TestAuthView, PasswordResetConfirm, \
-    PasswordResetRequestView, SetNewPassword, OTPVerificationView, PasswordChangeView, LogoutUserView, \
+from .views import RegisterView, VerifyUserEmail, LoginUserView, TestAuthView, OTPVerificationView, PasswordChangeView, \
+    LogoutUserView, \
     ChangePasswordView, PasswordChangeRequestView, VerifyPasswordChangeOTPView, ChangePasswordRequestView, \
-    VerifyChangePasswordOTPView, SetChangePassword, CustomTokenRefreshView
+    VerifyChangePasswordOTPView, SetChangePassword, CustomTokenRefreshView, SetNewPassword
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -22,10 +22,10 @@ urlpatterns = [
 
     path('delete-account/', views.DeleteUserView.as_view(), name='delete-account'),
     path('password-change-request/', PasswordChangeRequestView.as_view(), name='password-change-request'),
-    path('verify-password-change-otp/', VerifyPasswordChangeOTPView.as_view(), name='verify-password-change-otp'),
+    path('verify-password-change-otp/', VerifyPasswordChangeOTPView.as_view(), name='verify-password-change-otp'), # Verify OTP for password change
 
     path('change-password-request/', ChangePasswordRequestView.as_view(), name='change-password-request'),
-    path('verify-change-password-otp/', VerifyChangePasswordOTPView.as_view(), name='verify-change-password-otp'),
+    path('verify-change-password-otp/', VerifyChangePasswordOTPView.as_view(), name='verify-change-password-otp'), # Verify OTP for change password
     path('set-change-password/<uidb64>/<token>/', SetChangePassword.as_view(), name='set-change-password'),
     path('set-new-password/<uidb64>/<token>/', SetNewPassword.as_view(), name='set-new-password'),
     path('token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
