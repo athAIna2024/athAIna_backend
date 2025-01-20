@@ -111,8 +111,7 @@ class UpdateStudySet(generics.RetrieveUpdateAPIView):
 class ListOfStudySet(generics.ListAPIView):
     serializer_class = StudySetSerializer
     def get_queryset(self):
-        # user = self.request.user
-        user = User.objects.get(id=1) # Remove this line and uncomment the above line (FOR TESTING)
+        user = self.request.user
         # if user.is_authenticated: ## Uncomment this line (FOR TESTING)
         if user:
             try:
