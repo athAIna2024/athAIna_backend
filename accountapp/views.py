@@ -37,8 +37,9 @@ class RegisterView(GenericAPIView):
             return Response({
                 "data": serializer_data,
                 "message": "User created successfully",
+                "successful": True
             }, status=status.HTTP_201_CREATED)
-        return Response({serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({serializer.errors,}, status=status.HTTP_400_BAD_REQUEST)
 
 class VerifyUserEmail(GenericAPIView):
     serializer_class = VerifyUserEmailSerializer
@@ -57,14 +58,17 @@ class VerifyUserEmail(GenericAPIView):
                 user.save()
                 user_code_obj.delete()
                 return Response({
-                    "message": "Email verified successfully"
+                    "message": "Email verified successfully",
+                    "successful": True
                 }, status=status.HTTP_200_OK)
             return Response({
-                "message": "Email already verified"
+                "message": "Email already verified",
+                "successful": False
             }, status=status.HTTP_200_OK)
         except OneTimePassword.DoesNotExist:
             return Response({
-                "message": "Invalid OTP"
+                "message": "Invalid OTP",
+                "successful": False
             }, status=status.HTTP_400_BAD_REQUEST)
 class LoginUserView(GenericAPIView):
     serializer_class = LoginSerializer
@@ -78,14 +82,14 @@ class LoginUserView(GenericAPIView):
         response.set_cookie('refresh_token', refresh_token, httponly=True, max_age=1209600)  # 30 days
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-class TestAuthView(GenericAPIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        data = {
-            "message": "debug - authentication feature working"
-        }
-        return Response(data, status=status.HTTP_200_OK)
+# class TestAuthView(GenericAPIView):
+#     permission_classes = [IsAuthenticated]
+#
+#     def get(self, request):
+#         data = {
+#             "message": "debug - authentication feature working"
+#         }
+#         return Response(data, status=status.HTTP_200_OK)
 # class PasswordResetRequestView(GenericAPIView):
 #     serializer_class=PasswordResetRequestSerializer
 #     def post(self, request):
@@ -134,18 +138,21 @@ class SetNewPassword(GenericAPIView):
             user = User.objects.get(id=user_id)
             if not PasswordResetTokenGenerator().check_token(user, token):
                 return Response({
-                    "message": "Token is not valid, please request a new one"
+                    "message": "Token is not valid, please request a new one",
+                    "successful": False
                 }, status=status.HTTP_401_UNAUTHORIZED)
             serializer = self.serializer_class(data=request.data)
             serializer.is_valid(raise_exception=True)
             user.set_password(serializer.validated_data['password'])
             user.save()
             return Response({
-                "message": "Password reset successful"
+                "message": "Password reset successful",
+                "successful": True
             }, status=status.HTTP_200_OK)
         except (DjangoUnicodeDecodeError, User.DoesNotExist):
             return Response({
-                "message": "Invalid token"
+                "message": "Invalid token",
+                "successful": False
             }, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -160,18 +167,21 @@ class SetChangePassword(GenericAPIView):
             user = User.objects.get(id=user_id)
             if not PasswordResetTokenGenerator().check_token(user, token):
                 return Response({
-                    "message": "Token is not valid, please request a new one"
+                    "message": "Token is not valid, please request a new one",
+                    "successful": False
                 }, status=status.HTTP_401_UNAUTHORIZED)
             serializer = self.serializer_class(data=request.data, context={'request': request})
             serializer.is_valid(raise_exception=True)
             user.set_password(serializer.validated_data['new_password'])
             user.save()
             return Response({
-                "message": "Password updated successfully"
+                "message": "Password updated successfully",
+                "successful": True
             }, status=status.HTTP_200_OK)
         except (DjangoUnicodeDecodeError, User.DoesNotExist):
             return Response({
-                "message": "Invalid token"
+                "message": "Invalid token",
+                "successful": False
             }, status=status.HTTP_400_BAD_REQUEST)
 
 class OTPVerificationView(GenericAPIView):
@@ -185,7 +195,7 @@ class OTPVerificationView(GenericAPIView):
             refresh = RefreshToken.for_user(user)
             otp_obj.delete()  # Delete the OTP after successful verification
             response = Response({
-                "success": True,
+                "successful": True,
                 "msg": "OTP is valid",
                 "access": str(refresh.access_token),
             }, status=status.HTTP_200_OK)
@@ -194,7 +204,8 @@ class OTPVerificationView(GenericAPIView):
             return response
         except OneTimePassword.DoesNotExist:
             return Response({
-                "msg": "Invalid or expired OTP"
+                "msg": "Invalid or expired OTP",
+                "successful": False
             }, status=status.HTTP_400_BAD_REQUEST)
 
 class PasswordChangeView(GenericAPIView):
@@ -208,7 +219,8 @@ class PasswordChangeView(GenericAPIView):
         user.set_password(serializer.validated_data['password'])
         user.save()
         return Response({
-            "message": "Password reset successful"
+            "message": "Password reset successful",
+            "successful": True
         }, status=status.HTTP_200_OK)
 
 class ChangePasswordView(UpdateAPIView):
@@ -219,7 +231,8 @@ class ChangePasswordView(UpdateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
+        return Response({"message": "Password updated successfully",
+                         "successful":True}, status=status.HTTP_200_OK)
 
 class LogoutUserView(GenericAPIView):
     serializer_class = LogoutUserSerializer
@@ -246,7 +259,8 @@ class DeleteUserView(GenericAPIView):
         user.archive_date = timezone.now()
         user.save()
         return Response({
-            "message": "User deleted successfully"
+            "message": "User deleted successfully",
+            "successful": True
         }, status=status.HTTP_200_OK)
 
 
@@ -257,7 +271,8 @@ class PasswordChangeRequestView(GenericAPIView):
         serializer = self.serializer_class(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         return Response({
-            "message": "An OTP has been sent to your email to verify your identity"
+            "message": "An OTP has been sent to your email to verify your identity",
+            "successful": True
         }, status=status.HTTP_200_OK)
 
 class ChangePasswordRequestView(GenericAPIView):
@@ -267,7 +282,8 @@ class ChangePasswordRequestView(GenericAPIView):
         serializer = self.serializer_class(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         return Response({
-            "message": "An OTP has been sent to your email to verify your identity"
+            "message": "An OTP has been sent to your email to verify your identity",
+            "successful": True
         }, status=status.HTTP_200_OK)
 # change password
 class VerifyPasswordChangeOTPView(GenericAPIView):
@@ -286,11 +302,14 @@ class VerifyPasswordChangeOTPView(GenericAPIView):
             otp_obj.delete()  # Delete the OTP after successful verification
             return Response({
                 "message": "OTP verified successfully",
+                "successful": True,
                 "password_reset_link": abslink
             }, status=status.HTTP_200_OK)
         except OneTimePassword.DoesNotExist:
             return Response({
-                "message": "Invalid or expired OTP"
+                "message": "Invalid or expired OTP",
+                "successful": False
+
             }, status=status.HTTP_400_BAD_REQUEST)
 
 #forget password
@@ -310,11 +329,13 @@ class VerifyChangePasswordOTPView(GenericAPIView):
             otp_obj.delete()  # Delete the OTP after successful verification
             return Response({
                 "message": "OTP verified successfully",
+                "successful": True,
                 "password_reset_link": abslink
             }, status=status.HTTP_200_OK)
         except OneTimePassword.DoesNotExist:
             return Response({
-                "message": "Invalid or expired OTP"
+                "message": "Invalid or expired OTP",
+                "successful": False
             }, status=status.HTTP_400_BAD_REQUEST)
 
 class CustomTokenRefreshView(TokenRefreshView):

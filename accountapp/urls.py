@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import RegisterView, VerifyUserEmail, LoginUserView, TestAuthView, OTPVerificationView, PasswordChangeView, \
+from .views import RegisterView, VerifyUserEmail, LoginUserView, OTPVerificationView, PasswordChangeView, \
     LogoutUserView, \
     ChangePasswordView, PasswordChangeRequestView, VerifyPasswordChangeOTPView, ChangePasswordRequestView, \
     VerifyChangePasswordOTPView, SetChangePassword, CustomTokenRefreshView, SetNewPassword
@@ -9,7 +9,7 @@ urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('verify-email/', VerifyUserEmail.as_view(), name='verify-email'),
     path('login/', LoginUserView.as_view(), name='login'),
-    path('profile-debug/', TestAuthView.as_view(), name='granted'),
+    # path('profile-debug/', TestAuthView.as_view(), name='granted'),
 
     # path('password-reset/', PasswordResetRequestView.as_view(), name='password-reset'),
     # path('password-reset-confirm/<uidb64>/<token>/', PasswordResetConfirm.as_view(), name='reset-password-confirm'),
