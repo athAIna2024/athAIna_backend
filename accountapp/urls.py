@@ -22,12 +22,12 @@ urlpatterns = [
 
     path('delete-account/', views.DeleteUserView.as_view(), name='delete-account'),
     path('password-change-request/', PasswordChangeRequestView.as_view(), name='password-change-request'),
-    path('verify-password-change-otp/', VerifyPasswordChangeOTPView.as_view(), name='verify-password-change-otp'), # Verify OTP for password change
+    path('verify-change-password-otp/', VerifyPasswordChangeOTPView.as_view(), name='verify-change-password-otp'), # Verify OTP for change password
 
     path('change-password-request/', ChangePasswordRequestView.as_view(), name='change-password-request'),
-    path('verify-change-password-otp/', VerifyChangePasswordOTPView.as_view(), name='verify-change-password-otp'), # Verify OTP for change password
-    path('set-change-password/<uidb64>/<token>/', SetChangePassword.as_view(), name='set-change-password'),
-    path('set-new-password/<uidb64>/<token>/', SetNewPassword.as_view(), name='set-new-password'),
+    path('verify-forgot-password-otp/', VerifyChangePasswordOTPView.as_view(), name='verify-forgot-password-otp'), # Verify OTP for forgot password
+    path('change-password/<uidb64>/<token>/', SetChangePassword.as_view(), name='change-password'),
+    path('forgot-password/<uidb64>/<token>/', SetNewPassword.as_view(), name='forgot-password'),
     path('token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
 
 
