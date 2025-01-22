@@ -35,13 +35,13 @@ class CreateStudySet(generics.CreateAPIView):
         if serializer.is_valid():
             self.perform_create(serializer)
             return Response({
-                'message': 'StudySet created successfully.',
+                'message': 'Study Set created successfully.',
                 'data': serializer.data,
                 'successful': True
             }, status=HTTP_201_CREATED)
         else:
             return Response({
-                'message': 'StudySet could not be created, please try again.',
+                'message': 'Study Set could not be created, please try again.',
                 'errors': serializer.errors,
                 'successful': False
             }, status=HTTP_400_BAD_REQUEST)
@@ -80,13 +80,11 @@ class UpdateStudySet(generics.RetrieveUpdateAPIView):
     serializer_class = UpdateStudySetSerializer
     lookup_field = 'id'
 
-    # Verify if StudySet learner_instance should be updated or be checked through authentication
     def get_object(self):
-        # ASSOCIATION TO LEARNER_INSTANCE IS MISSING
         try:
             return super().get_object()
         except Http404:
-            raise NotFound({"detail": "No Study Set found with ID {0}".format(self.kwargs.get('id'))})
+            raise NotFound({"message": "No Study Set found with ID {0}".format(self.kwargs.get('id'))})
 
     def perform_update(self, serializer):
         title = serializer.validated_data.get('title')
@@ -103,12 +101,14 @@ class UpdateStudySet(generics.RetrieveUpdateAPIView):
             self.perform_update(serializer)
             return Response({
                 'message': 'Study Set updated successfully.',
-                'data': serializer.data
+                'data': serializer.data,
+                'successful': True
             }, status=HTTP_200_OK)
         else:
             return Response({
                 'message': 'Study Set could not be updated, please try again.',
-                'errors': serializer.errors
+                'errors': serializer.errors,
+                'successful': False
             }, status=HTTP_400_BAD_REQUEST)
 
 class ListOfStudySet(generics.ListAPIView):
@@ -121,9 +121,9 @@ class ListOfStudySet(generics.ListAPIView):
         if user:
             try:
                 learner = Learner.objects.get(user=user)
-                return StudySet.objects.filter(learner_instance=learner).order_by('-created_at')
-            except Learner.DoesNotExist:
-                raise Http404("Learner not found")
+                return StudySet.objects.filter(learner_instance=learner).order_by('-updated_at')
+            except Http404:
+                raise NotFound({"message": "No Study Set found with ID {0}".format(self.kwargs.get('id'))})
         return StudySet.objects.none()
 
     def get(self, request, *args, **kwargs):
