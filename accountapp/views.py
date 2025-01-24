@@ -304,7 +304,6 @@ class VerifyPasswordChangeOTPView(GenericAPIView):
                 "message": "OTP verified successfully",
                 "successful": True,
                 "password_reset_link": abslink
-
             }, status=status.HTTP_200_OK)
         except OneTimePassword.DoesNotExist:
             return Response({
@@ -325,7 +324,7 @@ class VerifyChangePasswordOTPView(GenericAPIView):
             uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
             token = PasswordResetTokenGenerator().make_token(user)
             current_site = get_current_site(request).domain
-            relative_link = reverse('set-change-password', kwargs={'uidb64': uidb64, 'token': token})
+            relative_link = reverse('forgot-password', kwargs={'uidb64': uidb64, 'token': token})
             abslink = f"http://{current_site}{relative_link}"
             otp_obj.delete()  # Delete the OTP after successful verification
             return Response({
