@@ -193,7 +193,7 @@ class DeleteStudySet(generics.RetrieveDestroyAPIView):
         try:
             return super().get_object()
         except Http404:
-            raise NotFound({"detail": "No Study Set found with ID {0}".format(self.kwargs.get('id'))})
+            raise NotFound({"message": "No Study Set found with ID {0}".format(self.kwargs.get('id'))})
     def perform_delete(self, serializer):
         serializer.delete()
 
@@ -205,11 +205,13 @@ class DeleteStudySet(generics.RetrieveDestroyAPIView):
             self.perform_delete(studyset)
             return Response({
                 'message': 'Study set deleted successfully.',
+                'successful': True,
                 'data': serializer.data
             }, status=HTTP_200_OK)
         else:
             return Response({
                 'message': 'Study set could not be deleted, please try again.',
+                'successful': False,
                 'errors': serializer.errors
             }, status=HTTP_400_BAD_REQUEST)
 
