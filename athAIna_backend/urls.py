@@ -26,5 +26,6 @@ urlpatterns = [
     path('studyset/', include('studysetapp.urls')),
     path('report/', include('reportapp.urls')),
     path('contact/', include('contactinquiryapp.urls')),
+    path('faq/', include('faqapp.urls'))
 
 ]

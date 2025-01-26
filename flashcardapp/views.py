@@ -57,13 +57,13 @@ class ListOfFlashcards(generics.ListAPIView):
             return Response({
                 'message': 'No flashcards found.',
                 'data': serializer.data,
-                'status': HTTP_200_OK
+                'successful': False,
             }, status=HTTP_200_OK)
         else:
             return Response({
                 'message': 'Flashcards retrieved successfully.',
                 'data': serializer.data,
-                'status': HTTP_200_OK
+                'successful': True,
             }, status=HTTP_200_OK)
 
 
