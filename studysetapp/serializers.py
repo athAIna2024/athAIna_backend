@@ -7,7 +7,10 @@ from .validators import validate_file_extension
 class StudySetSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudySet
-        fields = ['learner_instance', 'title', 'description', 'subjects']
+        fields = ['id', 'learner_instance', 'title', 'description', 'subject', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']
+
+    id = serializers.IntegerField(read_only=True)
 
     learner_instance = serializers.PrimaryKeyRelatedField(
         queryset=Learner.objects.all(),
@@ -17,7 +20,7 @@ class StudySetSerializer(serializers.ModelSerializer):
         })
 
     title = serializers.CharField(
-        max_length=100,
+        max_length=60,
         required=True,
         allow_blank=False,
         error_messages={
@@ -27,7 +30,7 @@ class StudySetSerializer(serializers.ModelSerializer):
         })
 
     description = serializers.CharField(
-        max_length=300,
+        max_length=100,
         required=True,
         allow_blank=False,
         error_messages={
@@ -36,7 +39,7 @@ class StudySetSerializer(serializers.ModelSerializer):
             'max_length': 'Please keep the description under 100 characters.'
         })
 
-    subjects = serializers.ChoiceField(
+    subject = serializers.ChoiceField(
         choices=StudySet.SubjectChoices.choices,
         required=True,
         error_messages={
@@ -46,10 +49,10 @@ class StudySetSerializer(serializers.ModelSerializer):
 class UpdateStudySetSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudySet
-        fields = ['title', 'description', 'subjects']
+        fields = ['title', 'description', 'subject']
 
     title = serializers.CharField(
-        max_length=100,
+        max_length=60,
         required=True,
         allow_blank=False,
         error_messages={
@@ -59,7 +62,7 @@ class UpdateStudySetSerializer(serializers.ModelSerializer):
         })
 
     description = serializers.CharField(
-        max_length=300,
+        max_length=100,
         required=True,
         allow_blank=False,
         error_messages={
@@ -68,7 +71,7 @@ class UpdateStudySetSerializer(serializers.ModelSerializer):
             'max_length': 'Please keep the description under 100 characters.'
         })
 
-    subjects = serializers.ChoiceField(
+    subject = serializers.ChoiceField(
         choices=StudySet.SubjectChoices.choices,
         required=True,
         error_messages={

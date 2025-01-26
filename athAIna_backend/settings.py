@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'studysetapp.apps.StudysetappConfig',
     'reportapp.apps.ReportappConfig',
     'contactinquiryapp.apps.ContactinquiryappConfig',
+    'faqapp.apps.FaqappConfig',
 
     'rest_framework',
     'rest_framework.authtoken',
@@ -83,15 +84,8 @@ WSGI_APPLICATION = 'athAIna_backend.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-# Local Non MYSLQ
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
 
-# Local MySQL
+
 DATABASES = {
     'default': {
         'ENGINE': env('DB_ENGINE'),
@@ -102,18 +96,6 @@ DATABASES = {
         'PORT': env('DB_PORT'),
     }
 }
-
-#docker mysql
-# DATABASES = {
-#     'default': {
-#         'ENGINE': env('DB_ENGINE'),
-#         'NAME': env('DB_NAME'),
-#         'USER': env('DB_USER'),
-#         'PASSWORD': env('DB_PASSWORD'),
-#         'HOST': env('DB_HOST'),
-#         'PORT': env('DB_PORT'),
-#     }
-# }
 
 
 AUTH_USER_MODEL = 'accountapp.User'

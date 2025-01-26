@@ -17,6 +17,7 @@ from studysetapp.paginators import StandardPaginationStudySets
 from rest_framework.views import APIView
 from django.db.models import Q
 
+from accountapp.models import User
 # Create your views here.
 
 class CreateStudySet(generics.CreateAPIView):
@@ -26,21 +27,23 @@ class CreateStudySet(generics.CreateAPIView):
         learner_instance = serializer.validated_data.get('learner_instance')
         title = serializer.validated_data.get('title')
         description = serializer.validated_data.get('description')
-        subjects = serializer.validated_data.get('subjects')
-        serializer.save(title=title, description=description, subjects=subjects)
+        subject = serializer.validated_data.get('subject')
+        serializer.save(learner_instance=learner_instance, title=title, description=description, subject=subject)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             self.perform_create(serializer)
             return Response({
-                'message': 'StudySet created successfully.',
-                'data': serializer.data
+                'message': 'Study Set created successfully.',
+                'data': serializer.data,
+                'successful': True
             }, status=HTTP_201_CREATED)
         else:
             return Response({
-                'message': 'StudySet could not be created, please try again.',
-                'errors': serializer.errors
+                'message': 'Study Set could not be created, please try again.',
+                'errors': serializer.errors,
+                'successful': False
             }, status=HTTP_400_BAD_REQUEST)
 
 class LibraryOfStudySet(generics.ListAPIView):
@@ -77,18 +80,17 @@ class UpdateStudySet(generics.RetrieveUpdateAPIView):
     serializer_class = UpdateStudySetSerializer
     lookup_field = 'id'
 
-    # Verify if StudySet learner_instance should be updated or be checked through authentication
     def get_object(self):
         try:
             return super().get_object()
         except Http404:
-            raise NotFound({"detail": "No Study Set found with ID {0}".format(self.kwargs.get('id'))})
+            raise NotFound({"message": "No Study Set found with ID {0}".format(self.kwargs.get('id'))})
+
     def perform_update(self, serializer):
         title = serializer.validated_data.get('title')
         description = serializer.validated_data.get('description')
-        subjects = serializer.validated_data.get('subjects')
-        studyset_id = serializer.validated_data.get('studyset_id')
-        serializer.save(title=title, description=description, subjects=subjects, studyset_id=studyset_id)
+        subject = serializer.validated_data.get('subject')
+        serializer.save(title=title, description=description, subject=subject)
 
     def put(self, request, *args, **kwargs):
         studyset = self.get_object()
@@ -99,32 +101,75 @@ class UpdateStudySet(generics.RetrieveUpdateAPIView):
             self.perform_update(serializer)
             return Response({
                 'message': 'Study Set updated successfully.',
-                'data': serializer.data
+                'data': serializer.data,
+                'successful': True
             }, status=HTTP_200_OK)
         else:
             return Response({
                 'message': 'Study Set could not be updated, please try again.',
-                'errors': serializer.errors
+                'errors': serializer.errors,
+                'successful': False
             }, status=HTTP_400_BAD_REQUEST)
+
+class ListOfStudySet(generics.ListAPIView):
+    serializer_class = StudySetSerializer
+    def get_queryset(self):
+        user_id = self.request.query_params.get('user_id') # For authentication, the code will be different
+        if user_id:
+            user = User.objects.get(id=user_id)
+        # if user.is_authenticated: ## Uncomment this line (FOR TESTING),
+        if user:
+            try:
+                learner = Learner.objects.get(user=user)
+                return StudySet.objects.filter(learner_instance=learner).order_by('-updated_at')
+            except Http404:
+                raise NotFound({"message": "No Study Set found with ID {0}".format(self.kwargs.get('id'))})
+        return StudySet.objects.none()
+
+    def get(self, request, *args, **kwargs):
+        studysets = self.get_queryset()
+        serializer = self.get_serializer(studysets, many=True)
+
+        if not serializer.data:
+            return Response({
+                'message': 'No Study Sets found. Please create one.',
+                'data': serializer.data,
+                'successful': False,
+            }, status=HTTP_200_OK)
+        else:
+            return Response({
+                'message': 'Study Sets found.',
+                'data': serializer.data,
+                'successful': True,
+            }, status=HTTP_200_OK)
 
 
 class StudySetSearchView(APIView):
     def get(self, request, *args, **kwargs):
-        query = request.query_params.get('q', '')
+        title = request.query_params.get('title')
+        description = request.query_params.get('description')
+        subject = request.query_params.get('subject')
         learner_id = request.query_params.get('learner_id')
 
-        if query:
-            study_sets = StudySet.objects.all()
-            if learner_id:
-                try:
-                    learner = Learner.objects.get(id=learner_id)
-                    study_sets = study_sets.filter(learner_instance=learner)
-                except Learner.DoesNotExist:
-                    return Response({"message": "Learner not found."}, status=HTTP_404_NOT_FOUND)
+        study_sets = StudySet.objects.all()
 
-            study_sets = study_sets.filter(
-                Q(title__icontains=query) | Q(description__icontains=query)
-            )
+        if learner_id:
+            try:
+                learner = Learner.objects.get(id=learner_id)
+                study_sets = study_sets.filter(learner_instance=learner)
+            except Learner.DoesNotExist:
+                return Response({"message": "Learner not found."}, status=HTTP_404_NOT_FOUND)
+
+        query = Q()
+        if title:
+            query |= Q(title__icontains=title)
+        if description:
+            query |= Q(description__icontains=description)
+        if subject:
+            query |= Q(subject__icontains=subject)
+
+        if query:
+            study_sets = study_sets.filter(query)
             serializer = StudySetSerializer(study_sets, many=True)
             return Response(serializer.data)
 
@@ -136,7 +181,7 @@ class StudySetFilterBySubjectView(generics.ListAPIView):
     def get_queryset(self):
         subject = self.request.query_params.get('q', '')
         if subject:
-            return StudySet.objects.filter(subjects=subject).order_by('created_at')
+            return StudySet.objects.filter(subject=subject).order_by('created_at')
         return StudySet.objects.none()
 
 class DeleteStudySet(generics.RetrieveDestroyAPIView):
@@ -148,7 +193,7 @@ class DeleteStudySet(generics.RetrieveDestroyAPIView):
         try:
             return super().get_object()
         except Http404:
-            raise NotFound({"detail": "No Study Set found with ID {0}".format(self.kwargs.get('id'))})
+            raise NotFound({"message": "No Study Set found with ID {0}".format(self.kwargs.get('id'))})
     def perform_delete(self, serializer):
         serializer.delete()
 
@@ -160,11 +205,13 @@ class DeleteStudySet(generics.RetrieveDestroyAPIView):
             self.perform_delete(studyset)
             return Response({
                 'message': 'Study set deleted successfully.',
+                'successful': True,
                 'data': serializer.data
             }, status=HTTP_200_OK)
         else:
             return Response({
                 'message': 'Study set could not be deleted, please try again.',
+                'successful': False,
                 'errors': serializer.errors
             }, status=HTTP_400_BAD_REQUEST)
 

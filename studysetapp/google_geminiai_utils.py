@@ -96,7 +96,7 @@ def clean_data_for_flashcard_creation(valid_flashcards=[], studyset_id=None):
 
     return flashcard_data
 
-print(clean_data_for_flashcard_creation(["Question: What is the difference of IPv4 and IPv6?/Answer: IPv4 has 32-bit address space, while IPv6 has 128-bit address space.",
-"Question: What is the OSI model?/Answer: The OSI model is a conceptual framework used to understand network communications.",
-"Question: What is the difference between TCP and UDP?/Answer: TCP is connection-oriented, while UDP is connectionless.",
-                                         "Question: What is the difference of VSLM and FSLM Subnetting?/Answer: VLSM allows for subnetting a subnet, while FLSM does not."], 1))
+# print(clean_data_for_flashcard_creation(["Question: What is the difference of IPv4 and IPv6?/Answer: IPv4 has 32-bit address space, while IPv6 has 128-bit address space.",
+# "Question: What is the OSI model?/Answer: The OSI model is a conceptual framework used to understand network communications.",
+# "Question: What is the difference between TCP and UDP?/Answer: TCP is connection-oriented, while UDP is connectionless.",
+#                                          "Question: What is the difference of VSLM and FSLM Subnetting?/Answer: VLSM allows for subnetting a subnet, while FLSM does not."], 1))
