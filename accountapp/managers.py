@@ -1,12 +1,12 @@
+# accountapp/managers.py
+
 from django.contrib.auth.models import BaseUserManager
-from django.core import exceptions
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from django.template.defaultfilters import capfirst
 from django.utils.translation import gettext_lazy as _
 
 class UserManager(BaseUserManager):
-    def email_validator(self,email):
+    def email_validator(self, email):
         try:
             validate_email(email)
         except ValidationError:
@@ -23,16 +23,7 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_verified', True)
-
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError(_('Superuser must have is_staff=True'))
-        if extra_fields.get('is_superuser') is not True:
-            raise ValueError(_('Superuser must have is_superuser=True'))
-
         user = self.create_user(email, password, **extra_fields)
-        user.save(using=self._db)
-
+        from accountapp.models import Admin  # Local import to avoid circular import
+        Admin.objects.create(user=user, is_staff=True, is_superuser=True, is_verified=True)
         return user

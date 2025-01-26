@@ -79,7 +79,7 @@ class LoginSerializer(serializers.ModelSerializer):
         user=authenticate(request, email=email, password=password)
         if not user:
             raise serializers.ValidationError('Invalid credentials')
-        if not user.is_verified:
+        if not user.status=='verified':
             raise AuthenticationFailed('Account is not verified')
         user_tokens=user.token()
 
