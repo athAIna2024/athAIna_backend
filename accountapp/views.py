@@ -1,8 +1,12 @@
+from django.contrib.auth import authenticate
 from django.contrib.sites.shortcuts import get_current_site
+from django.http import JsonResponse
 from django.urls import reverse
 from django.utils import timezone
 
 from django.shortcuts import render
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from google.protobuf.proto_json import serialize
 from rest_framework.generics import GenericAPIView, UpdateAPIView, DestroyAPIView
 from rest_framework import status
@@ -71,16 +75,44 @@ class VerifyUserEmail(GenericAPIView):
                 "successful": False
             }, status=status.HTTP_400_BAD_REQUEST)
 class LoginUserView(GenericAPIView):
+    #
+    # # Original Code
+    # serializer_class = LoginSerializer
+    # def post(self, request):
+    #     serializer = self.serializer_class(data=request.data, context={'request': request})
+    #     serializer.is_valid(raise_exception=True)
+    #     response = Response(serializer.data, status=status.HTTP_200_OK)
+    #     access_token = serializer.data.get('access_token')
+    #     refresh_token = serializer.data.get('refresh_token')
+    #     response.set_cookie('access_token', access_token, httponly=True,samesite='Lax',secure=False, max_age=3600)  # 1 hour REMINDER: Set true when in production yung secure, debug lang naka false
+    #     response.set_cookie('refresh_token', refresh_token, httponly=True,samesite='Lax',secure=False, max_age=1209600)  # 30 days
+    #     return Response({serializer.data,}, status=status.HTTP_200_OK)
+
+    # Updated Code
     serializer_class = LoginSerializer
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data, context={'request': request})
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        response = Response(serializer.data, status=status.HTTP_200_OK)
-        access_token = serializer.data.get('access_token')
-        refresh_token = serializer.data.get('refresh_token')
-        response.set_cookie('access_token', access_token, httponly=True, max_age=3600)  # 1 hour
-        response.set_cookie('refresh_token', refresh_token, httponly=True, max_age=1209600)  # 30 days
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        email = serializer.validated_data['email']
+        password = serializer.validated_data['password']
+        user = authenticate(email=email, password=password)
+
+        if user is not None:
+            refresh = RefreshToken.for_user(user)
+            response = Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'message': 'Login successful',
+                'successful': True
+            }, status=status.HTTP_200_OK)
+            response.set_cookie('access_token', str(refresh.access_token), httponly=True, samesite='Lax', secure=False,
+                                max_age=3600)
+            response.set_cookie('refresh_token', str(refresh), httponly=True, samesite='Lax', secure=False,
+                                max_age=1209600)
+            return response
+        else:
+            return Response({'detail': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
 # class TestAuthView(GenericAPIView):
 #     permission_classes = [IsAuthenticated]
@@ -351,3 +383,4 @@ class CustomTokenRefreshView(TokenRefreshView):
             except Exception as e:
                 return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
         return response
+
