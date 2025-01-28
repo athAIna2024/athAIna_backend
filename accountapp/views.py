@@ -172,7 +172,7 @@ class SetNewPassword(GenericAPIView):
                 return Response({
                     "message": "Token is not valid, please request a new one",
                     "successful": False
-                }, status=status.HTTP_401_UNAUTHORIZED)
+                }, status=status.HTTP_400_BAD_REQUEST)
             serializer = self.serializer_class(data=request.data)
             serializer.is_valid(raise_exception=True)
             user.set_password(serializer.validated_data['password'])
@@ -186,6 +186,12 @@ class SetNewPassword(GenericAPIView):
                 "message": "Invalid token",
                 "successful": False
             }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "error": str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 
 
@@ -201,7 +207,7 @@ class SetChangePassword(GenericAPIView):
                 return Response({
                     "message": "Token is not valid, please request a new one",
                     "successful": False
-                }, status=status.HTTP_401_UNAUTHORIZED)
+                }, status=status.HTTP_400_BAD_REQUEST)
             serializer = self.serializer_class(data=request.data, context={'request': request})
             serializer.is_valid(raise_exception=True)
             user.set_password(serializer.validated_data['new_password'])
@@ -214,6 +220,10 @@ class SetChangePassword(GenericAPIView):
             return Response({
                 "message": "Invalid token",
                 "successful": False
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                "error": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
 
 class OTPVerificationView(GenericAPIView):
