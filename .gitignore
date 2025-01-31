@@ -37,5 +37,3 @@ athAIna_backend/settings.py
 athAIna_backend/settings.py
 faqapp/migrations/0001_initial.py
 athAIna_backend/settings.py
-studysetapp/migrations/0002_rename_subjects_studyset_subject.py
-accountapp/migrations/0002_remove_user_is_active_remove_user_is_staff_and_more.py
