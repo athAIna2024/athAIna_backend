@@ -4,7 +4,7 @@ from . import views
 from .views import RegisterView, VerifyUserEmail, LoginUserView, OTPVerificationView, PasswordChangeView, \
     LogoutUserView, \
     ChangePasswordView, PasswordChangeRequestView, VerifyPasswordChangeOTPView, ChangePasswordRequestView, \
-    VerifyChangePasswordOTPView, SetChangePassword, CustomTokenRefreshView, SetNewPassword
+    VerifyChangePasswordOTPView, SetChangePassword, CustomTokenRefreshView, SetNewPassword, CheckUserTokensView
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -31,6 +31,6 @@ urlpatterns = [
     path('forgot-password/<uidb64>/<token>/', SetNewPassword.as_view(), name='forgot-password'),
     path('token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
 
-
+    path('checkToken/',CheckUserTokensView.as_view(), name='checkToken'),
 
 ]

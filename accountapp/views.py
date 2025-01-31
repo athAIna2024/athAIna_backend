@@ -92,6 +92,16 @@ class LoginUserView(GenericAPIView):
     serializer_class = LoginSerializer
 
     def post(self, request, *args, **kwargs):
+        old_refresh_token = request.COOKIES.get('refresh_token')
+
+        if old_refresh_token:
+            try:
+                old_token = RefreshToken(old_refresh_token)
+                old_token.blacklist()
+            except Exception as e:
+                return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
+
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data['email']
@@ -107,9 +117,9 @@ class LoginUserView(GenericAPIView):
                 'user_id': user.id,
                 'successful': True
             }, status=status.HTTP_200_OK)
-            response.set_cookie('access_token', str(refresh.access_token), httponly=True, samesite='Lax', secure=False,
+            response.set_cookie('access_token', str(refresh.access_token), httponly=True, samesite='None', secure=True,
                                 max_age=3600)
-            response.set_cookie('refresh_token', str(refresh), httponly=True, samesite='Lax', secure=False,
+            response.set_cookie('refresh_token', str(refresh), httponly=True, samesite='None', secure=True,
                                 max_age=1209600)
             return response
         else:
@@ -395,3 +405,15 @@ class CustomTokenRefreshView(TokenRefreshView):
                 return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
         return response
 
+class CheckUserTokensView(GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'message': 'Current tokens retrieved successfully',
+            'successful': True
+        }, status=status.HTTP_200_OK)
