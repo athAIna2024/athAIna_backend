@@ -296,12 +296,18 @@ class LogoutUserView(GenericAPIView):
             refresh_token = request.data["refresh"]
             token = RefreshToken(refresh_token)
             token.blacklist()
-            response = Response(status=status.HTTP_204_NO_CONTENT)
+            response = Response({
+                "successful": True,
+                "message": "User logged out successfully"
+            },status=status.HTTP_204_NO_CONTENT)
             response.delete_cookie('access_token')
             response.delete_cookie('refresh_token')
             return response
         except Exception as e:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                "error": "Invalid token",
+                "successful": False
+            },status=status.HTTP_400_BAD_REQUEST)
 
 class DeleteUserView(GenericAPIView):
     permission_classes = [IsAuthenticated]
