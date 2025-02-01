@@ -45,8 +45,8 @@ class ListOfFlashcards(generics.ListAPIView):
             try:
                 studyset_instance = StudySet.objects.get(id=studyset_id)
                 return Flashcard.objects.filter(studyset_instance=studyset_instance).order_by('created_at')
-            except StudySet.DoesNotExist:
-                raise Http404("StudySet not found")
+            except Http404:
+                raise NotFound({"message": "No flashcards found for the specified studyset."})
         return Flashcard.objects.none()
 
     def get(self, request, *args, **kwargs):
@@ -55,7 +55,7 @@ class ListOfFlashcards(generics.ListAPIView):
 
         if not serializer.data:
             return Response({
-                'message': 'No flashcards found.',
+                'message': 'No flashcards found. Please create some flashcards.',
                 'data': serializer.data,
                 'successful': False,
             }, status=HTTP_200_OK)
