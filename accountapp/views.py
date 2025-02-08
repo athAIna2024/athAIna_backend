@@ -4,6 +4,8 @@ from django.http import JsonResponse
 from django.urls import reverse
 from django.utils import timezone
 
+from django.views.decorators.csrf import ensure_csrf_cookie
+
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -74,6 +76,8 @@ class VerifyUserEmail(GenericAPIView):
                 "message": "Invalid OTP",
                 "successful": False
             }, status=status.HTTP_400_BAD_REQUEST)
+
+
 class LoginUserView(GenericAPIView):
     #
     # # Original Code
@@ -91,6 +95,7 @@ class LoginUserView(GenericAPIView):
     # Updated Code
     serializer_class = LoginSerializer
 
+    @method_decorator(ensure_csrf_cookie)
     def post(self, request, *args, **kwargs):
         old_refresh_token = request.COOKIES.get('refresh_token')
 
