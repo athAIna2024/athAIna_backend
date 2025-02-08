@@ -4,12 +4,13 @@ from django.http import JsonResponse
 from django.urls import reverse
 from django.utils import timezone
 
-from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
 
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from google.protobuf.proto_json import serialize
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.generics import GenericAPIView, UpdateAPIView, DestroyAPIView
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -295,10 +296,13 @@ class ChangePasswordView(UpdateAPIView):
 class LogoutUserView(GenericAPIView):
     serializer_class = LogoutUserSerializer
     permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
 
+    @method_decorator(csrf_protect)
     def post(self, request):
         try:
-            refresh_token = request.data["refresh"]
+            refresh_token = request.COOKIES.get('refresh_token')
+            access_token = request.COOKIES.get('access_token')
             token = RefreshToken(refresh_token)
             token.blacklist()
             response = Response({
