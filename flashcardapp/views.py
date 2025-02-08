@@ -27,13 +27,13 @@ class CreateFlashcard(generics.CreateAPIView):
             return Response({
                 'message': 'Flashcard created successfully.',
                 'data': serializer.data,
-                'status': HTTP_201_CREATED
+                'successful': True,
             }, status=HTTP_201_CREATED)
         else:
             return Response({
                 'message': 'Flashcard could not be created, please try again.',
                 'errors': serializer.errors,
-                'status': HTTP_400_BAD_REQUEST
+                'successful': False,
             }, status=HTTP_400_BAD_REQUEST)
 
 class ListOfFlashcards(generics.ListAPIView):
@@ -137,7 +137,7 @@ class UpdateFlashcard(generics.RetrieveUpdateAPIView):
         try:
             return super().get_object()
         except Http404:
-            raise NotFound({"detail": "No Flashcard found with ID {0}".format(self.kwargs.get('id'))})
+            raise NotFound({"message": "No Flashcard found with ID {0}".format(self.kwargs.get('id'))})
 
     def perform_update(self, serializer):
         question = serializer.validated_data.get('question')
@@ -159,13 +159,13 @@ class UpdateFlashcard(generics.RetrieveUpdateAPIView):
             return Response({
                 'message': 'Flashcard updated successfully.',
                 'data': serializer.data,
-                'status': HTTP_200_OK
+                'successful': True,
             }, status=HTTP_200_OK)
         else:
             return Response({
                 'message': 'Flashcard could not be updated, please try again.',
                 'errors': serializer.errors,
-                'status': HTTP_400_BAD_REQUEST
+                'successful': False,
             }, status=HTTP_400_BAD_REQUEST)
 
 class DeleteFlashcard(generics.RetrieveDestroyAPIView):
