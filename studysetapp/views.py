@@ -118,12 +118,12 @@ class ListOfStudySet(generics.ListAPIView):
         if user_id:
             user = User.objects.get(id=user_id)
         # if user.is_authenticated: ## Uncomment this line (FOR TESTING),
-        if user:
-            try:
-                learner = Learner.objects.get(user=user)
-                return StudySet.objects.filter(learner_instance=learner).order_by('-updated_at')
-            except Http404:
-                raise NotFound({"message": "No Study Set found with ID {0}".format(self.kwargs.get('id'))})
+            if user:
+                try:
+                    learner = Learner.objects.get(user=user)
+                    return StudySet.objects.filter(learner_instance=learner).order_by('-updated_at')
+                except Http404:
+                    raise NotFound({"message": "No Study Set found with ID {0}".format(self.kwargs.get('id'))})
         return StudySet.objects.none()
 
     def get(self, request, *args, **kwargs):

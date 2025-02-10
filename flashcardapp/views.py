@@ -10,6 +10,9 @@ from .paginators import StandardPaginationFlashcards, ReviewModePaginationFlashc
 from .serializers import FlashcardSerializer
 from rest_framework.views import APIView
 from django.db.models import Q
+
+from accountapp.models import User
+from accountapp.models import Learner
 class CreateFlashcard(generics.CreateAPIView):
     serializer_class = FlashcardSerializer
 
@@ -40,7 +43,14 @@ class ListOfFlashcards(generics.ListAPIView):
     serializer_class = FlashcardSerializer
 
     def get_queryset(self):
-        return Flashcard.objects.all().order_by('updated_at')
+        studyset_id = self.request.query_params.get('studyset_id')
+        if studyset_id:
+            try:
+                studyset_instance = StudySet.objects.get(id=studyset_id)
+                return Flashcard.objects.filter(studyset_instance=studyset_instance).order_by('updated_at')
+            except StudySet.DoesNotExist:
+                raise NotFound({"message": "No StudySet found with ID {0}".format(studyset_id)})
+        return Flashcard.objects.none()
 
     def get(self, request, *args, **kwargs):
         flashcards = self.get_queryset()
