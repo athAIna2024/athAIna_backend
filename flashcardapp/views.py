@@ -40,14 +40,7 @@ class ListOfFlashcards(generics.ListAPIView):
     serializer_class = FlashcardSerializer
 
     def get_queryset(self):
-        studyset_id = self.request.query_params.get('studyset_id')
-        if studyset_id:
-            try:
-                studyset_instance = StudySet.objects.get(id=studyset_id)
-                return Flashcard.objects.filter(studyset_instance=studyset_instance).order_by('created_at')
-            except Http404:
-                raise NotFound({"message": "No flashcards found for the specified studyset."})
-        return Flashcard.objects.none()
+        return Flashcard.objects.all().order_by('updated_at')
 
     def get(self, request, *args, **kwargs):
         flashcards = self.get_queryset()
