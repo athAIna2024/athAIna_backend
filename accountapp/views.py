@@ -293,16 +293,16 @@ class ChangePasswordView(UpdateAPIView):
         return Response({"message": "Password updated successfully",
                          "successful":True}, status=status.HTTP_200_OK)
 
+
 class LogoutUserView(GenericAPIView):
     serializer_class = LogoutUserSerializer
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAuthenticated]
 
     @method_decorator(csrf_protect)
     def post(self, request):
         try:
             refresh_token = request.COOKIES.get('refresh_token')
-            access_token = request.COOKIES.get('access_token')
+            csrf_token = request.COOKIES.get('athAIna_csrfToken')
             token = RefreshToken(refresh_token)
             token.blacklist()
             response = Response({
