@@ -10,6 +10,9 @@ from .paginators import StandardPaginationFlashcards, ReviewModePaginationFlashc
 from .serializers import FlashcardSerializer
 from rest_framework.views import APIView
 from django.db.models import Q
+
+from accountapp.models import User
+from accountapp.models import Learner
 class CreateFlashcard(generics.CreateAPIView):
     serializer_class = FlashcardSerializer
 
@@ -27,13 +30,13 @@ class CreateFlashcard(generics.CreateAPIView):
             return Response({
                 'message': 'Flashcard created successfully.',
                 'data': serializer.data,
-                'status': HTTP_201_CREATED
+                'successful': True,
             }, status=HTTP_201_CREATED)
         else:
             return Response({
                 'message': 'Flashcard could not be created, please try again.',
                 'errors': serializer.errors,
-                'status': HTTP_400_BAD_REQUEST
+                'successful': False,
             }, status=HTTP_400_BAD_REQUEST)
 
 class ListOfFlashcards(generics.ListAPIView):
@@ -44,9 +47,9 @@ class ListOfFlashcards(generics.ListAPIView):
         if studyset_id:
             try:
                 studyset_instance = StudySet.objects.get(id=studyset_id)
-                return Flashcard.objects.filter(studyset_instance=studyset_instance).order_by('created_at')
+                return Flashcard.objects.filter(studyset_instance=studyset_instance).order_by('updated_at')
             except StudySet.DoesNotExist:
-                raise Http404("StudySet not found")
+                raise NotFound({"message": "No StudySet found with ID {0}".format(studyset_id)})
         return Flashcard.objects.none()
 
     def get(self, request, *args, **kwargs):
@@ -55,7 +58,7 @@ class ListOfFlashcards(generics.ListAPIView):
 
         if not serializer.data:
             return Response({
-                'message': 'No flashcards found.',
+                'message': 'No flashcards found. Please create some flashcards.',
                 'data': serializer.data,
                 'successful': False,
             }, status=HTTP_200_OK)
@@ -137,7 +140,7 @@ class UpdateFlashcard(generics.RetrieveUpdateAPIView):
         try:
             return super().get_object()
         except Http404:
-            raise NotFound({"detail": "No Flashcard found with ID {0}".format(self.kwargs.get('id'))})
+            raise NotFound({"message": "No Flashcard found with ID {0}".format(self.kwargs.get('id'))})
 
     def perform_update(self, serializer):
         question = serializer.validated_data.get('question')
@@ -159,13 +162,13 @@ class UpdateFlashcard(generics.RetrieveUpdateAPIView):
             return Response({
                 'message': 'Flashcard updated successfully.',
                 'data': serializer.data,
-                'status': HTTP_200_OK
+                'successful': True,
             }, status=HTTP_200_OK)
         else:
             return Response({
                 'message': 'Flashcard could not be updated, please try again.',
                 'errors': serializer.errors,
-                'status': HTTP_400_BAD_REQUEST
+                'successful': False,
             }, status=HTTP_400_BAD_REQUEST)
 
 class DeleteFlashcard(generics.RetrieveDestroyAPIView):
