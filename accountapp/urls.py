@@ -1,9 +1,10 @@
 from django.urls import path
+
 from . import views
 from .views import RegisterView, VerifyUserEmail, LoginUserView, OTPVerificationView, PasswordChangeView, \
     LogoutUserView, \
     ChangePasswordView, PasswordChangeRequestView, VerifyPasswordChangeOTPView, ChangePasswordRequestView, \
-    VerifyChangePasswordOTPView, SetChangePassword, CustomTokenRefreshView, SetNewPassword
+    VerifyChangePasswordOTPView, SetChangePassword, CustomTokenRefreshView, SetNewPassword, CheckUserTokensView
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -22,7 +23,7 @@ urlpatterns = [
 
     path('delete-account/', views.DeleteUserView.as_view(), name='delete-account'),
     path('password-change-request/', PasswordChangeRequestView.as_view(), name='password-change-request'),
-    path('verify-password-change-otp/', VerifyPasswordChangeOTPView.as_view(), name='verify-change-password-otp'), # Verify OTP for change password
+    path('verify-password-change-otp/', VerifyPasswordChangeOTPView.as_view(), name='verify-password-change-otp'), # Verify OTP for change password
 
     path('change-password-request/', ChangePasswordRequestView.as_view(), name='change-password-request'), # Request for change/forgot password
     path('verify-forgot-password-otp/', VerifyChangePasswordOTPView.as_view(), name='verify-forgot-password-otp'), # Verify OTP for forgot password
@@ -30,6 +31,6 @@ urlpatterns = [
     path('forgot-password/<uidb64>/<token>/', SetNewPassword.as_view(), name='forgot-password'),
     path('token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
 
-
+    path('checkToken/',CheckUserTokensView.as_view(), name='checkToken'),
 
 ]

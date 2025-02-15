@@ -85,6 +85,7 @@ class LoginSerializer(serializers.ModelSerializer):
 
         return {
             'email': user.email,
+            'password': password,
             'access_token': str(user_tokens.get('access')),
             'refresh_token': str(user_tokens.get('refresh')),
         }
