@@ -168,12 +168,19 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = ["http://localhost:5173" ]
 CORS_TRUSTED_ORIGINS = ["http://localhost:5173" ]
 CORS_ORIGIN_WHITELIST = env.list('CORS_ORIGIN_WHITELIST', default=["http://localhost:5173"])
-CSRF_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SAMESITE = 'None'
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_HTTPONLY = True
 CORS_ALLOW_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 CORS_ALLOW_HEADERS = ['accept', 'accept-encoding', 'authorization', 'content-type', 'origin', 'x-csrftoken']
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_AGE = 1209600 # 2 weeks
+SESSION_COOKIE_NAME = 'athAIna_session'
+CSRF_COOKIE_NAME = 'athAIna_csrfToken'
+CSRF_TRUSTED_ORIGINS = ["http://localhost:5173"]
+
 
 
 EMAIL_HOST=env('EMAIL_HOST')
@@ -202,11 +209,3 @@ CACHES = {
     }
 }
 
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-
-SESSION_COOKIE_AGE = 1209600 # 2 weeks
-
-SESSION_COOKIE_NAME = 'athAIna_session'
-
-CSRF_COOKIE_NAME = 'athAIna_csrfToken'
