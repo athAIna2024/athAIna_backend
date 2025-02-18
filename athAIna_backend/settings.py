@@ -176,9 +176,10 @@ CORS_ALLOW_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 CORS_ALLOW_HEADERS = ['accept', 'accept-encoding', 'authorization', 'content-type', 'origin', 'x-csrftoken']
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_AGE = 1209600 # 2 weeks
+SESSION_COOKIE_AGE = 604800
 SESSION_COOKIE_NAME = 'athAIna_session'
 CSRF_COOKIE_NAME = 'athAIna_csrfToken'
+CSRF_COOKIE_AGE = 604800
 CSRF_TRUSTED_ORIGINS = ["http://localhost:5173"]
 
 
