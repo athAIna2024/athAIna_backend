@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate
 from django.contrib.sites.shortcuts import get_current_site
 from django.http import JsonResponse
+from django.middleware.csrf import get_token
 from django.urls import reverse
 from django.utils import timezone
 
@@ -96,7 +97,6 @@ class LoginUserView(GenericAPIView):
     # Updated Code
     serializer_class = LoginSerializer
 
-    @method_decorator(ensure_csrf_cookie)
     def post(self, request, *args, **kwargs):
         old_refresh_token = request.COOKIES.get('refresh_token')
 
@@ -114,8 +114,14 @@ class LoginUserView(GenericAPIView):
         password = serializer.validated_data['password']
         user = authenticate(email=email, password=password)
 
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         if user is not None:
+
             refresh = RefreshToken.for_user(user)
+            csrf = get_token(request)
             response = Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
@@ -126,10 +132,14 @@ class LoginUserView(GenericAPIView):
             response.set_cookie('access_token', str(refresh.access_token), httponly=True, samesite='None', secure=True,
                                 max_age=3600)
             response.set_cookie('refresh_token', str(refresh), httponly=True, samesite='None', secure=True,
-                                max_age=1209600)
+                                max_age=604800)
+            response.set_cookie('athAIna_csrfToken',csrf, samesite='None', secure=True)
             return response
         else:
             return Response({'detail': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+
 
 # class TestAuthView(GenericAPIView):
 #     permission_classes = [IsAuthenticated]

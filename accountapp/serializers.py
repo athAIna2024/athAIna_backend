@@ -1,3 +1,5 @@
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from httplib2.auth import token
 from rest_framework import serializers
 from urllib3 import request
@@ -28,6 +30,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         password = attrs.get('password', '')
         password2 = attrs.get('password2', '')
+        email = attrs.get('email', '')
+
+        try:
+            validate_email(email)
+        except ValidationError:
+            raise serializers.ValidationError('Invalid email address format')
 
         if password != password2:
             raise serializers.ValidationError('Passwords do not match')
@@ -76,6 +84,10 @@ class LoginSerializer(serializers.ModelSerializer):
         email = attrs.get('email', '')
         password = attrs.get('password', '')
         request = self.context.get('request')
+
+        if not User.objects.filter(email=email).exists():
+            raise serializers.ValidationError('No such user exists')
+
         user=authenticate(request, email=email, password=password)
         if not user:
             raise serializers.ValidationError('Invalid credentials')
