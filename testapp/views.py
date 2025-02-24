@@ -21,12 +21,12 @@ class GenerateRandomFlashcards(generics.RetrieveAPIView):
             if not self.validate_number_of_questions(number_of_questions):
                 return Response({
                     'message': 'The number of questions exceeds the available flashcards.',
-                    'status': HTTP_400_BAD_REQUEST
+                    'successful': False
                 }, status=HTTP_400_BAD_REQUEST)
         except (TypeError, ValueError):
             return Response({
                 'message': 'Please provide a valid number of questions.',
-                'status': HTTP_400_BAD_REQUEST
+                'successful': False
             }, status=HTTP_400_BAD_REQUEST)
 
         random_flashcard_ids = self.randomize_flashcards(number_of_questions)
@@ -34,11 +34,11 @@ class GenerateRandomFlashcards(generics.RetrieveAPIView):
             return Response({
                 'message': 'Flashcards generated successfully.',
                 'flashcard_ids': random_flashcard_ids,
-                'status': HTTP_201_CREATED
+                'successful': True
             }, status=HTTP_201_CREATED)
         return Response({
             'message': 'No flashcards available.',
-            'status': HTTP_400_BAD_REQUEST
+            'successful': False
         }, status=HTTP_400_BAD_REQUEST)
 
     def randomize_flashcards(self, number_of_questions):
