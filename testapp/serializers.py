@@ -12,13 +12,6 @@ class GeneratedTestSerializer(serializers.ModelSerializer):
             "required": "Please provide the test's batch id",
         })
 
-    studyset_instance = serializers.PrimaryKeyRelatedField(
-        queryset=StudySet.objects.all(),
-        required=True,
-        error_messages={
-            'required': 'Please provide a study set instance',
-        })
-
     flashcard_instance = serializers.PrimaryKeyRelatedField(
         queryset=Flashcard.objects.all(),
         required=True,
