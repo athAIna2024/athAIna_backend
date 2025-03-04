@@ -42,6 +42,7 @@ class FlashcardSerializer(serializers.ModelSerializer):
 
     image = serializers.ImageField(
         required=False,
+        allow_null=True,
         validators=[validate_image_size],
         error_messages={
             'invalid_image': 'Please provide a valid image file.',
