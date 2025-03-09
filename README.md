@@ -49,3 +49,4 @@ pip install redis
 pip install requests
 pip install celery
 pip install pyclean
+pip install protobuf
