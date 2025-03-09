@@ -49,4 +49,6 @@ pip install redis
 pip install requests
 pip install celery
 pip install pyclean
+pip install pillow
 pip install protobuf
+pip install httplib2
