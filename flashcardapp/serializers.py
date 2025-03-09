@@ -29,13 +29,14 @@ class FlashcardSerializer(serializers.ModelSerializer):
             'blank': 'Please provide a question',
             'max_length': 'Please keep the question under 300 characters.'
         })
-
+    
     answer = serializers.CharField(
         max_length=100,
         required=True,
         allow_blank=False,
         error_messages={
-            'required': 'Please provide an answer',
+            'required': 'Please provide an answer'
+            'answer',
             'blank': 'Please provide an answer',
             'max_length': 'Please keep the answer under 100 characters.'
         })
