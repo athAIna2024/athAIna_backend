@@ -1,10 +1,12 @@
 from rest_framework import generics
 from rest_framework.response import Response
-from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST
+from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_200_OK
 import random
 from flashcardapp.models import Flashcard
 from flashcardapp.serializers import FlashcardSerializer
-
+from .tasks import validate_learner_answer_with_ai_task
+from django.http import Http404
+from rest_framework.exceptions import NotFound
 class GenerateRandomFlashcards(generics.RetrieveAPIView):
     serializer_class = FlashcardSerializer
 
@@ -50,3 +52,39 @@ class GenerateRandomFlashcards(generics.RetrieveAPIView):
 
     def validate_number_of_questions(self, number_of_questions):
         return 0 < number_of_questions <= self.get_queryset().count()
+
+
+class ValidateLearnerAnswerWithAi(generics.RetrieveAPIView):
+    queryset = Flashcard.objects.all()
+    serializer_class = FlashcardSerializer
+    lookup_field = 'id'
+
+    def get(self, request, *args, **kwargs):
+        flashcard_id = self.kwargs.get('id')
+        learner_answer = self.request.query_params.get('learner_answer')
+
+        try:
+            flashcard = self.get_object()
+        except Http404:
+            raise NotFound(detail='Flashcard not found with ID {0}'.format(flashcard_id))
+
+        if flashcard:
+            correct_answer = flashcard.answer
+            print(f"Flashcard question: {flashcard.question}")
+            print(f"Flashcard answer: {correct_answer}")
+            print(f"Learner answer: {learner_answer}")
+            question = flashcard.question
+            result = validate_learner_answer_with_ai_task.apply_async((question, correct_answer, learner_answer))
+            is_correct = result.get()
+
+            return Response({
+                'message': 'Validating learner answer with AI.',
+                'is_correct': is_correct,
+                'successful': True
+            }, status=HTTP_200_OK)
+        else:
+            return Response({
+                'message': 'Flashcard not found.',
+                'successful': False
+            }, status=HTTP_400_BAD_REQUEST)
+
