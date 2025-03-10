@@ -63,10 +63,10 @@ def validate_learner_answer_with_ai(question, correct_answer, learner_answer):
         print(f"An error occurred: {e}")
 
 
-question = "What protocol is responsible for ensuring reliable and ordered delivery of data over the Internet?"
-correct_answer = "TCP"
-learner_answer = "Transmission Control Protocol"
-print(validate_learner_answer_with_ai(question, correct_answer, learner_answer))
+# question = "What protocol is responsible for ensuring reliable and ordered delivery of data over the Internet?"
+# correct_answer = "TCP"
+# learner_answer = "Transmission Control Protocol"
+# print(validate_learner_answer_with_ai(question, correct_answer, learner_answer))
 
 # prompt = "Are you gemini 2.0 flash now? What is the difference between gemini 1.5?"
 # response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)

@@ -4,6 +4,7 @@ from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_2
 import random
 from flashcardapp.models import Flashcard
 from flashcardapp.serializers import FlashcardSerializer
+from .serializers import GeneratedTestSerializer
 from .tasks import validate_learner_answer_with_ai_task
 from django.http import Http404
 from rest_framework.exceptions import NotFound
@@ -70,9 +71,6 @@ class ValidateLearnerAnswerWithAi(generics.RetrieveAPIView):
 
         if flashcard:
             correct_answer = flashcard.answer
-            print(f"Flashcard question: {flashcard.question}")
-            print(f"Flashcard answer: {correct_answer}")
-            print(f"Learner answer: {learner_answer}")
             question = flashcard.question
             result = validate_learner_answer_with_ai_task.apply_async((question, correct_answer, learner_answer))
             is_correct = result.get()
@@ -88,3 +86,29 @@ class ValidateLearnerAnswerWithAi(generics.RetrieveAPIView):
                 'successful': False
             }, status=HTTP_400_BAD_REQUEST)
 
+
+class SaveTestResults(generics.CreateAPIView):
+    serializer_class = GeneratedTestSerializer
+
+    def get_serializer(self, *args, **kwargs):
+        if isinstance(self.request.data, list):
+            kwargs['many'] = True
+        return super().get_serializer(*args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        try:
+            serializer = self.get_serializer(data=request.data, many=isinstance(request.data, list))
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            return Response(
+                {
+                    'message': 'Test results saved successfully.',
+                    'data': serializer.data,
+                    'successful': True
+                },status=HTTP_201_CREATED)
+        except Exception as e:
+            return Response({
+                    'message': 'An error occurred while saving test results.',
+                    'error': str(e),
+                    'successful': False
+                }, status=HTTP_400_BAD_REQUEST)

@@ -1,12 +1,17 @@
-from studysetapp.models import StudySet
 from flashcardapp.models import Flashcard
 from rest_framework import serializers
 from .models import GeneratedTest
-import uuid
+
+class BulkCreateGeneratedTestSerializer(serializers.ListSerializer):
+    def create(self, validated_data):
+        instances = [self.child.Meta.model(**item) for item in validated_data]
+        try:
+            return self.child.Meta.model.objects.bulk_create(instances)
+        except Exception as e:
+            raise serializers.ValidationError(f"Bulk create failed: {str(e)}")
 
 class GeneratedTestSerializer(serializers.ModelSerializer):
     batch_id = serializers.UUIDField(
-        default=uuid.uuid4,
         required=True,
         error_messages={
             "required": "Please provide the test's batch id",
@@ -28,7 +33,6 @@ class GeneratedTestSerializer(serializers.ModelSerializer):
             'max_length': 'Please keep the learner answer under 100 characters.'
         })
     is_correct = serializers.BooleanField(
-        default=False,
         required=True,
         error_messages={
             'required': 'Please provide the correctness of the answer',
@@ -46,4 +50,9 @@ class GeneratedTestSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GeneratedTest
-        fields = '__all__'
+        list_serializer_class = BulkCreateGeneratedTestSerializer
+        fields = ['batch_id', 'flashcard_instance', 'learner_answer', 'is_correct', 'created_at', 'corrected_at']
+        read_only_fields = ['deleted_at', 'restored_at', 'transaction_id']
+
+
+
