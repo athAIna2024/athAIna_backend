@@ -118,10 +118,10 @@ class PasswordResetRequestSerializer(serializers.Serializer):
             uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
             token = PasswordResetTokenGenerator().make_token(user)
             request = self.context.get('request')
-            email_body = f"Your OTP code is {otp_code.code} \\n Use this link to verify http://localhost:8000/account/verify-password-change-otp/"
+            email_body = f"Your OTP code is {otp_code.code}"
             data = {
                 'email_body': email_body,
-                'email_subject': "Reset your Password",
+                'email_subject': "Change your Password",
                 'to_email': user.email
             }
             send_normal_email(data)
@@ -142,7 +142,7 @@ class ChangePasswordRequestSerializer(serializers.Serializer):
             uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
             token = PasswordResetTokenGenerator().make_token(user)
             request = self.context.get('request')
-            email_body = f"Your OTP code is {otp_code.code} \\n Use this link to verify http://localhost:8000/account/verify-change-password-otp/"
+            email_body = f"Your OTP code is {otp_code.code}"
             data = {
                 'email_body': email_body,
                 'email_subject': "Reset your Password",
