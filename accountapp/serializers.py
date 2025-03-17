@@ -85,15 +85,19 @@ class LoginSerializer(serializers.ModelSerializer):
         password = attrs.get('password', '')
         request = self.context.get('request')
 
-        if not User.objects.filter(email=email).exists():
-            raise serializers.ValidationError('No such user exists')
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError('No user found with this email address')
 
-        user=authenticate(request, email=email, password=password)
+        user = authenticate(request, email=email, password=password)
         if not user:
-            raise serializers.ValidationError('Invalid credentials')
-        if not user.status=='verified':
+            raise serializers.ValidationError('Incorrect password')
+
+        if user.status != 'verified':
             raise AuthenticationFailed('Account is not verified')
-        user_tokens=user.token()
+
+        user_tokens = user.token()
 
         return {
             'email': user.email,
