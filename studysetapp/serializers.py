@@ -8,7 +8,6 @@ class StudySetSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudySet
         fields = ['id', 'learner_instance', 'title', 'description', 'subject', 'created_at', 'updated_at']
-        read_only_fields = ['created_at', 'updated_at']
 
     id = serializers.IntegerField(read_only=True)
 
@@ -49,8 +48,11 @@ class StudySetSerializer(serializers.ModelSerializer):
 class UpdateStudySetSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudySet
-        fields = ['title', 'description', 'subject']
-        read_only_fields = ['id', 'learner_instance', 'created_at', 'updated_at']
+        fields = ['id', 'learner_instance', 'title', 'description', 'subject', 'updated_at']
+
+    id = serializers.IntegerField(read_only=True)
+    learner_instance = serializers.PrimaryKeyRelatedField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
 
     title = serializers.CharField(
         max_length=60,
@@ -64,7 +66,7 @@ class UpdateStudySetSerializer(serializers.ModelSerializer):
 
     description = serializers.CharField(
         max_length=100,
-        required=True,
+        required=False,
         allow_blank=False,
         error_messages={
             'required': 'Please provide a description',
