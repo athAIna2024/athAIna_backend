@@ -30,7 +30,7 @@ class StudySetSerializer(serializers.ModelSerializer):
 
     description = serializers.CharField(
         max_length=100,
-        required=True,
+        required=False,
         allow_blank=False,
         error_messages={
             'required': 'Please provide a description',
