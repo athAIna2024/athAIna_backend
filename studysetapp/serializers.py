@@ -50,6 +50,7 @@ class UpdateStudySetSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudySet
         fields = ['title', 'description', 'subject']
+        read_only_fields = ['id', 'learner_instance', 'created_at', 'updated_at']
 
     title = serializers.CharField(
         max_length=60,
