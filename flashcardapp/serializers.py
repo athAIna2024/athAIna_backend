@@ -18,7 +18,6 @@ class FlashcardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Flashcard
         fields = ['id', 'question', 'answer', 'image', 'studyset_instance', 'created_at', 'updated_at', 'is_ai_generated']
-        read_only_fields = ['created_at', 'updated_at', 'is_ai_generated', 'deleted_at', 'restored_at', 'transaction_id']
 
     question = serializers.CharField(
         max_length=300,
