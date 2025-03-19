@@ -249,3 +249,47 @@ class LogoutUserSerializer(serializers.Serializer):
             token.blacklist()
         except TokenError:
             return self.fail('bad_token')
+
+
+class ResendOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=255)
+    purpose = serializers.ChoiceField(
+        choices=['signup', 'change_password', 'forgot_password'],
+        required=True
+    )
+
+    class Meta:
+        fields = ['email', 'purpose']
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        purpose = attrs.get('purpose')
+
+        if not User.objects.filter(email=email).exists():
+            raise serializers.ValidationError('No user found with this email address')
+
+        user = User.objects.get(email=email)
+
+        # Delete any existing OTP for the user
+        OneTimePassword.objects.filter(user=user).delete()
+
+        # Create new OTP
+        otp_code = OneTimePassword.objects.create(user=user, code=generateOtp())
+
+        # Prepare email based on purpose
+        if purpose == 'signup':
+            subject = "One Time Password for Email Verification"
+        elif purpose == 'change_password':
+            subject = "Change Your Password"
+        else:  # forgot_password
+            subject = "Reset Your Password"
+
+        email_body = f"Your OTP code is {otp_code.code}"
+        data = {
+            'email_body': email_body,
+            'email_subject': subject,
+            'to_email': user.email
+        }
+        send_normal_email(data)
+
+        return attrs
