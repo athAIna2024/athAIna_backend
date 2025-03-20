@@ -86,13 +86,18 @@ class LoginSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
 
         try:
+            validate_email(email)
+        except ValidationError:
+            raise serializers.ValidationError({'email': 'Invalid email address format'})
+
+        try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            raise serializers.ValidationError('No user found with this email address')
+            raise serializers.ValidationError({'email': 'No user found with this email address'})
 
         user = authenticate(request, email=email, password=password)
         if not user:
-            raise serializers.ValidationError('Incorrect password')
+            raise serializers.ValidationError({'password': 'Incorrect password'})
 
         if user.status != 'verified':
             raise AuthenticationFailed('Account is not verified')
@@ -105,6 +110,7 @@ class LoginSerializer(serializers.ModelSerializer):
             'access_token': str(user_tokens.get('access')),
             'refresh_token': str(user_tokens.get('refresh')),
         }
+
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=255)
