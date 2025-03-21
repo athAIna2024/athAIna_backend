@@ -34,6 +34,6 @@ urlpatterns = [
 
     path('checkToken/',CheckUserTokensView.as_view(), name='checkToken'),
 
-path('resend-otp/', ResendOTPView.as_view(), name='resend-otp'),
+    path('resend-otp/', ResendOTPView.as_view(), name='resend-otp'),
 
 ]

@@ -128,7 +128,7 @@ class PasswordResetRequestSerializer(serializers.Serializer):
             uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
             token = PasswordResetTokenGenerator().make_token(user)
             request = self.context.get('request')
-            email_body = f"Your OTP code is {otp_code.code}"
+            email_body = f"Hello {user.email},\n\nYour One Time Password for Change Password is {otp_code.code}\n\nRegards,\nathAIna Team"
             data = {
                 'email_body': email_body,
                 'email_subject': "Change your Password",
@@ -152,10 +152,10 @@ class ChangePasswordRequestSerializer(serializers.Serializer):
             uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
             token = PasswordResetTokenGenerator().make_token(user)
             request = self.context.get('request')
-            email_body = f"Your OTP code is {otp_code.code}"
+            email_body = f"Hello {user.email},\n\nYour One Time Password for Reset Password is {otp_code.code}\n\nRegards,\nathAIna Team"
             data = {
                 'email_body': email_body,
-                'email_subject': "Reset your Password",
+                'email_subject': "Reset Password",
                 'to_email': user.email
             }
             send_normal_email(data)
@@ -285,12 +285,15 @@ class ResendOTPSerializer(serializers.Serializer):
         # Prepare email based on purpose
         if purpose == 'signup':
             subject = "One Time Password for Email Verification"
+            email_body = f"Hello {user.email},\n\nYour One Time Password for Email Verification is {otp_code.code}\n\nRegards,\nathAIna Team"
         elif purpose == 'change_password':
             subject = "Change Your Password"
+            email_body = f"Hello {user.email},\n\nYour One Time Password for Change Password is {otp_code.code}\n\nRegards,\nathAIna Team"
         else:  # forgot_password
             subject = "Reset Your Password"
+            email_body = f"Hello {user.email},\n\nYour One Time Password for Reset Password is {otp_code.code}\n\nRegards,\nathAIna Team"
 
-        email_body = f"Your OTP code is {otp_code.code}"
+        # email_body = f"Your OTP code is {otp_code.code}"
         data = {
             'email_body': email_body,
             'email_subject': subject,
