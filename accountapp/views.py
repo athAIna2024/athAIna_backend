@@ -128,6 +128,8 @@ class LoginUserView(GenericAPIView):
                 'access': str(refresh.access_token),
                 'message': 'Login successful',
                 'user_id': user.id,
+                'email':email,
+                'login_date': timezone.now(),
                 'successful': True
             }, status=status.HTTP_200_OK)
             response.set_cookie('access_token', str(refresh.access_token), httponly=True, samesite='None', secure=True,
