@@ -85,15 +85,24 @@ class LoginSerializer(serializers.ModelSerializer):
         password = attrs.get('password', '')
         request = self.context.get('request')
 
-        if not User.objects.filter(email=email).exists():
-            raise serializers.ValidationError('No such user exists')
+        try:
+            validate_email(email)
+        except ValidationError:
+            raise serializers.ValidationError({'email': 'Invalid email address format'})
 
-        user=authenticate(request, email=email, password=password)
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError({'email': 'No user found with this email address'})
+
+        user = authenticate(request, email=email, password=password)
         if not user:
-            raise serializers.ValidationError('Invalid credentials')
-        if not user.status=='verified':
+            raise serializers.ValidationError({'password': 'Incorrect password'})
+
+        if user.status != 'verified':
             raise AuthenticationFailed('Account is not verified')
-        user_tokens=user.token()
+
+        user_tokens = user.token()
 
         return {
             'email': user.email,
@@ -101,6 +110,7 @@ class LoginSerializer(serializers.ModelSerializer):
             'access_token': str(user_tokens.get('access')),
             'refresh_token': str(user_tokens.get('refresh')),
         }
+
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=255)
@@ -118,10 +128,10 @@ class PasswordResetRequestSerializer(serializers.Serializer):
             uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
             token = PasswordResetTokenGenerator().make_token(user)
             request = self.context.get('request')
-            email_body = f"Your OTP code is {otp_code.code} \\n Use this link to verify http://localhost:8000/account/verify-password-change-otp/"
+            email_body = f"Hello {user.email},\n\nYour One Time Password for Change Password is {otp_code.code}\n\nRegards,\nathAIna Team"
             data = {
                 'email_body': email_body,
-                'email_subject': "Reset your Password",
+                'email_subject': "Change your Password",
                 'to_email': user.email
             }
             send_normal_email(data)
@@ -142,10 +152,10 @@ class ChangePasswordRequestSerializer(serializers.Serializer):
             uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
             token = PasswordResetTokenGenerator().make_token(user)
             request = self.context.get('request')
-            email_body = f"Your OTP code is {otp_code.code} \\n Use this link to verify http://localhost:8000/account/verify-change-password-otp/"
+            email_body = f"Hello {user.email},\n\nYour One Time Password for Reset Password is {otp_code.code}\n\nRegards,\nathAIna Team"
             data = {
                 'email_body': email_body,
-                'email_subject': "Reset your Password",
+                'email_subject': "Reset Password",
                 'to_email': user.email
             }
             send_normal_email(data)
@@ -245,3 +255,50 @@ class LogoutUserSerializer(serializers.Serializer):
             token.blacklist()
         except TokenError:
             return self.fail('bad_token')
+
+
+class ResendOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=255)
+    purpose = serializers.ChoiceField(
+        choices=['signup', 'change_password', 'forgot_password'],
+        required=True
+    )
+
+    class Meta:
+        fields = ['email', 'purpose']
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        purpose = attrs.get('purpose')
+
+        if not User.objects.filter(email=email).exists():
+            raise serializers.ValidationError('No user found with this email address')
+
+        user = User.objects.get(email=email)
+
+        # Delete any existing OTP for the user
+        OneTimePassword.objects.filter(user=user).delete()
+
+        # Create new OTP
+        otp_code = OneTimePassword.objects.create(user=user, code=generateOtp())
+
+        # Prepare email based on purpose
+        if purpose == 'signup':
+            subject = "One Time Password for Email Verification"
+            email_body = f"Hello {user.email},\n\nYour One Time Password for Email Verification is {otp_code.code}\n\nRegards,\nathAIna Team"
+        elif purpose == 'change_password':
+            subject = "Change Your Password"
+            email_body = f"Hello {user.email},\n\nYour One Time Password for Change Password is {otp_code.code}\n\nRegards,\nathAIna Team"
+        else:  # forgot_password
+            subject = "Reset Your Password"
+            email_body = f"Hello {user.email},\n\nYour One Time Password for Reset Password is {otp_code.code}\n\nRegards,\nathAIna Team"
+
+        # email_body = f"Your OTP code is {otp_code.code}"
+        data = {
+            'email_body': email_body,
+            'email_subject': subject,
+            'to_email': user.email
+        }
+        send_normal_email(data)
+
+        return attrs

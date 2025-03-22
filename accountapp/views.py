@@ -21,7 +21,8 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from accountapp.models import OneTimePassword, User, Learner
 from accountapp.serializers import UserRegistrationSerializer, VerifyUserEmailSerializer, LoginSerializer, \
     SetNewPasswordSerializer, \
-    PasswordResetRequestSerializer, LogoutUserSerializer, ChangePasswordSerializer, ChangePasswordRequestSerializer
+    PasswordResetRequestSerializer, LogoutUserSerializer, ChangePasswordSerializer, ChangePasswordRequestSerializer, \
+    ResendOTPSerializer
 from accountapp.utils import send_code_to_user
 from rest_framework.response import Response
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
@@ -441,4 +442,19 @@ class CheckUserTokensView(GenericAPIView):
             'access': str(refresh.access_token),
             'message': 'Current tokens retrieved successfully',
             'successful': True
+        }, status=status.HTTP_200_OK)
+
+
+class ResendOTPView(GenericAPIView):
+    serializer_class = ResendOTPSerializer
+    authentication_classes = []  # No authentication required
+    permission_classes = []  # No permissions required
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        return Response({
+            "successful": True,
+            "message": "OTP has been resent to your email"
         }, status=status.HTTP_200_OK)
