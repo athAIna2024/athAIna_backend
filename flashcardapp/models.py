@@ -13,8 +13,9 @@ class Flashcard(SoftDeleteModel):
    is_ai_generated = models.BooleanField(default=False)
    deleted_at = models.DateTimeField(null=True, blank=True)
 
-
    def __str__(self):
-       return self.question
+    return self.question
 
+   class Meta:
+       db_table = 'flashcards'
 

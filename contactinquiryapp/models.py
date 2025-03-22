@@ -9,3 +9,6 @@ class ContactInquiry(models.Model):
 
     def __str__(self):
         return self.email + " - " + self.message[:20]
+
+    class Meta:
+        db_table = 'contactinquiries'

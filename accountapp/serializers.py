@@ -1,3 +1,5 @@
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from httplib2.auth import token
 from rest_framework import serializers
 from urllib3 import request
@@ -28,6 +30,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         password = attrs.get('password', '')
         password2 = attrs.get('password2', '')
+        email = attrs.get('email', '')
+
+        try:
+            validate_email(email)
+        except ValidationError:
+            raise serializers.ValidationError('Invalid email address format')
 
         if password != password2:
             raise serializers.ValidationError('Passwords do not match')
@@ -35,11 +43,20 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         if len(password) < 8:
             raise serializers.ValidationError('Password must be longer than 8 characters')
 
+        if password.isdigit():
+            raise serializers.ValidationError('Password cannot be completely numeric')
+
         if not re.search(r'\d', password):
             raise serializers.ValidationError('Password must contain at least one number')
 
-        if password.isdigit():
-            raise serializers.ValidationError('Password cannot be completely numeric')
+        if not re.search(r'[A-Z]', password):
+            raise serializers.ValidationError('Password must contain at least one uppercase letter')
+
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+            raise serializers.ValidationError('Password must contain at least one special character')
+
+
+
 
         return attrs
 
@@ -67,18 +84,33 @@ class LoginSerializer(serializers.ModelSerializer):
         email = attrs.get('email', '')
         password = attrs.get('password', '')
         request = self.context.get('request')
-        user=authenticate(request, email=email, password=password)
+
+        try:
+            validate_email(email)
+        except ValidationError:
+            raise serializers.ValidationError({'email': 'Invalid email address format'})
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError({'email': 'No user found with this email address'})
+
+        user = authenticate(request, email=email, password=password)
         if not user:
-            raise serializers.ValidationError('Invalid credentials')
-        if not user.is_verified:
+            raise serializers.ValidationError({'password': 'Incorrect password'})
+
+        if user.status != 'verified':
             raise AuthenticationFailed('Account is not verified')
-        user_tokens=user.token()
+
+        user_tokens = user.token()
 
         return {
             'email': user.email,
+            'password': password,
             'access_token': str(user_tokens.get('access')),
             'refresh_token': str(user_tokens.get('refresh')),
         }
+
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=255)
@@ -96,10 +128,10 @@ class PasswordResetRequestSerializer(serializers.Serializer):
             uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
             token = PasswordResetTokenGenerator().make_token(user)
             request = self.context.get('request')
-            email_body = f"Your OTP code is {otp_code.code} \\n Use this link to verify http://localhost:8000/account/verify-password-change-otp/"
+            email_body = f"Hello {user.email},\n\nYour One Time Password for Change Password is {otp_code.code}\n\nRegards,\nathAIna Team"
             data = {
                 'email_body': email_body,
-                'email_subject': "Reset your Password",
+                'email_subject': "Change your Password",
                 'to_email': user.email
             }
             send_normal_email(data)
@@ -120,10 +152,10 @@ class ChangePasswordRequestSerializer(serializers.Serializer):
             uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
             token = PasswordResetTokenGenerator().make_token(user)
             request = self.context.get('request')
-            email_body = f"Your OTP code is {otp_code.code} \\n Use this link to verify http://localhost:8000/account/verify-change-password-otp/"
+            email_body = f"Hello {user.email},\n\nYour One Time Password for Reset Password is {otp_code.code}\n\nRegards,\nathAIna Team"
             data = {
                 'email_body': email_body,
-                'email_subject': "Reset your Password",
+                'email_subject': "Reset Password",
                 'to_email': user.email
             }
             send_normal_email(data)
@@ -144,12 +176,19 @@ class SetNewPasswordSerializer(serializers.Serializer):
 
         if len(password) < 8:
             raise serializers.ValidationError('Password must be longer than 8 characters')
+        if password.isdigit():
+            raise serializers.ValidationError('Password cannot be entirely numeric')
 
         if not re.search(r'\d', password):
             raise serializers.ValidationError('Password must contain at least one number')
 
-        if password.isdigit():
-            raise serializers.ValidationError('Password cannot be entirely numeric')
+        if not re.search(r'[A-Z]', password):
+            raise serializers.ValidationError('Password must contain at least one uppercase letter')
+
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+            raise serializers.ValidationError('Password must contain at least one special character')
+
+
 
         return attrs
 
@@ -176,11 +215,16 @@ class ChangePasswordSerializer(serializers.Serializer):
         if len(new_password) < 8:
             raise serializers.ValidationError('Password must be longer than 8 characters')
 
-        if not re.search(r'\d', new_password):
-            raise serializers.ValidationError('Password must contain at least one number')
-
         if new_password.isdigit():
             raise serializers.ValidationError('Password cannot be entirely numeric')
+
+        if not re.search(r'\d', new_password):
+            raise serializers.ValidationError('Password must contain at least one number')
+        if not re.search(r'[A-Z]', new_password):
+            raise serializers.ValidationError('Password must contain at least one uppercase letter')
+
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', new_password):
+            raise serializers.ValidationError('Password must contain at least one special character')
 
         if not user.check_password(old_password):
             raise serializers.ValidationError('Old password is incorrect')
@@ -194,7 +238,7 @@ class ChangePasswordSerializer(serializers.Serializer):
         return user
 
 
-class LogoutUserSerialezer(serializers.Serializer):
+class LogoutUserSerializer(serializers.Serializer):
     refresh_token = serializers.CharField()
 
     default_error_messages = {
@@ -211,3 +255,50 @@ class LogoutUserSerialezer(serializers.Serializer):
             token.blacklist()
         except TokenError:
             return self.fail('bad_token')
+
+
+class ResendOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=255)
+    purpose = serializers.ChoiceField(
+        choices=['signup', 'change_password', 'forgot_password'],
+        required=True
+    )
+
+    class Meta:
+        fields = ['email', 'purpose']
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        purpose = attrs.get('purpose')
+
+        if not User.objects.filter(email=email).exists():
+            raise serializers.ValidationError('No user found with this email address')
+
+        user = User.objects.get(email=email)
+
+        # Delete any existing OTP for the user
+        OneTimePassword.objects.filter(user=user).delete()
+
+        # Create new OTP
+        otp_code = OneTimePassword.objects.create(user=user, code=generateOtp())
+
+        # Prepare email based on purpose
+        if purpose == 'signup':
+            subject = "One Time Password for Email Verification"
+            email_body = f"Hello {user.email},\n\nYour One Time Password for Email Verification is {otp_code.code}\n\nRegards,\nathAIna Team"
+        elif purpose == 'change_password':
+            subject = "Change Your Password"
+            email_body = f"Hello {user.email},\n\nYour One Time Password for Change Password is {otp_code.code}\n\nRegards,\nathAIna Team"
+        else:  # forgot_password
+            subject = "Reset Your Password"
+            email_body = f"Hello {user.email},\n\nYour One Time Password for Reset Password is {otp_code.code}\n\nRegards,\nathAIna Team"
+
+        # email_body = f"Your OTP code is {otp_code.code}"
+        data = {
+            'email_body': email_body,
+            'email_subject': subject,
+            'to_email': user.email
+        }
+        send_normal_email(data)
+
+        return attrs

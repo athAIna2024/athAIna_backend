@@ -16,9 +16,9 @@ def send_code_to_user(email):
     otp_code = generateOtp()
     print(otp_code)
     user = User.objects.get(email=email)
-    current_site = "http://Testotp.com"
-    email_body = f"Hello {user.email},\n\nYour One Time Password for Email Verification is {otp_code}\n\nRegards,\nTestotp Team"
-    from_email = "test@swag.com"
+    current_site = "http://athAIna.com"
+    email_body = f"Hello {user.email},\n\nYour One Time Password for Email Verification is {otp_code}\n\nRegards,\nathAIna Team"
+    from_email = "no_reply@athAIna.com"
 
     OneTimePassword.objects.create(user=user, code=otp_code)
 
