@@ -1,58 +1,58 @@
-
-from studysetapp.models import StudySet
+from flashcardapp.models import Flashcard
 from rest_framework import serializers
 from .models import GeneratedTest
-from .validators import validate_flashcard_count
-class GeneratedTestSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = GeneratedTest
-        fields = '__all__'
-        read_only_fields = ['learner_answer', 'correct']
 
+class BulkCreateGeneratedTestSerializer(serializers.ListSerializer):
     def create(self, validated_data):
-        batch_id = self.context.get('batch_id')
-        if batch_id:
-            validated_data['batch_id'] = batch_id
-        return GeneratedTest.objects.create(**validated_data)
+        instances = [self.child.Meta.model(**item) for item in validated_data]
+        try:
+            return self.child.Meta.model.objects.bulk_create(instances)
+        except Exception as e:
+            raise serializers.ValidationError(f"Bulk create failed: {str(e)}")
 
-class LearnerAnswerSerializer(serializers.ModelSerializer):
-    question = serializers.CharField(source='flashcard_instance.question', read_only=True)
-    answer = serializers.CharField(source='flashcard_instance.answer', read_only=True)
+class GeneratedTestSerializer(serializers.ModelSerializer):
+    batch_id = serializers.UUIDField(
+        required=True,
+        error_messages={
+            "required": "Please provide the test's batch id",
+        })
+
+    flashcard_instance = serializers.PrimaryKeyRelatedField(
+        queryset=Flashcard.objects.all(),
+        required=True,
+        error_messages={
+            'required': 'Please provide a flashcard instance',
+        })
+
+    learner_answer = serializers.CharField(
+        max_length=100,
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+        error_messages={
+            'max_length': 'Please keep the learner answer under 100 characters.'
+        })
+    is_correct = serializers.BooleanField(
+        required=True,
+        error_messages={
+            'required': 'Please provide the correctness of the answer',
+        })
+    created_at = serializers.DateTimeField(
+        required=True,
+        error_messages={
+            'required': 'Please provide the date and time the test was generated.'
+        })
+    corrected_at = serializers.DateTimeField(
+        required=True,
+        error_messages={
+            'required': 'Please provide the date and time the test was corrected.'
+        })
 
     class Meta:
         model = GeneratedTest
-        fields = '__all__'
-        read_only_fields = ['studyset_instance', 'flashcard_instance', 'question', 'answer']
+        list_serializer_class = BulkCreateGeneratedTestSerializer
+        fields = ['batch_id', 'flashcard_instance', 'learner_answer', 'is_correct', 'created_at', 'corrected_at']
+        read_only_fields = ['deleted_at', 'restored_at', 'transaction_id']
 
-    def update(self, instance, validated_data):
-        instance.learner_answer = validated_data.get('learner_answer', instance.learner_answer)
-        instance.correct = validated_data.get('correct', instance.correct)
-        instance.studyset_instance = instance.studyset_instance  # Ensure it's not changed
-        instance.flashcard_instance = instance.flashcard_instance  # Ensure it's not changed
-        instance.save()
-        return instance
 
-class GenerateRandomFlashcardSerializer(serializers.Serializer):
 
-    studyset_instance = serializers.PrimaryKeyRelatedField(
-        queryset=StudySet.objects.all(),
-        required=True,
-        error_messages={
-            'required': 'Please choose a study set',
-        }
-    )
-
-    number_of_flashcards = serializers.IntegerField(
-        required=True,
-        error_messages={
-            'required': 'Please enter the number of flashcards',
-        }
-    )
-
-    def validate(self, data):
-        studyset_instance = data.get('studyset_instance')
-        number_of_flashcards = data.get('number_of_flashcards')
-        validate_flashcard_count(studyset_instance, number_of_flashcards)
-        return data
-
-# Create a GeneratedTest for report page 03/11/2024 18:24:00

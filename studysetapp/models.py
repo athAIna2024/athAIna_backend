@@ -20,7 +20,7 @@ class StudySet(SoftDeleteModel):
 
     learner_instance = models.ForeignKey('accountapp.Learner', on_delete=models.CASCADE)
     title = models.CharField(max_length=60)
-    description = models.CharField(max_length=100)
+    description = models.CharField(max_length=100, blank=True, null=True)
     subject = models.CharField(max_length=20, choices=SubjectChoices.choices)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -35,3 +35,20 @@ To install Docker Desktop on Windows,
     - sudo service mysql start
 2. Install Docker Desktop from the official website.
  
+List of libraries to install
+pip install django
+pip install djangorestframework
+pip install django-cors-headers
+pip install django-environ
+pip install django-redis
+pip install django-soft-delete
+pip install djangorestframework-simplejwt
+pip install google-genai
+pip install mysqlclient
+pip install redis
+pip install requests
+pip install celery
+pip install pyclean
+pip install pillow
+pip install protobuf
+pip install httplib2
