@@ -1,9 +1,15 @@
 import random
+import mailtrap as mt
 from django.core.mail import EmailMessage, send_mail
+import environ
+import requests
 
 from accountapp.models import User, OneTimePassword
 from athAIna_backend import settings
 
+env = environ.Env(
+    DEBUG=(bool, False)
+)
 
 def generateOtp():
     otp = ""
@@ -22,8 +28,20 @@ def send_code_to_user(email):
 
     OneTimePassword.objects.create(user=user, code=otp_code)
 
-    d_email = EmailMessage(subject=subject, body=email_body, from_email=from_email, to=[email])
-    d_email.send(fail_silently=True)
+# original email otp
+    # d_email = EmailMessage(subject=subject, body=mail, from_email=from_email, to=[email])
+    # d_email.send(fail_silently=True)
+
+# for testing
+    url = "https://sandbox.api.mailtrap.io/api/send/2916017"
+    payload = "{\"from\":{\"email\":\"hello@demomailtrap.com\",\"name\":\"Athaina Team\"},\"to\":[{\"email\":\"test@test.com\"}],\"template_uuid\":\"6e7712d6-bd09-487f-b816-7055d14dd620\",\"template_variables\":{\"otp\":\""+otp_code+"\"}}"
+    headers = {
+        "Authorization": "Bearer "+ env('MAILTRAP_API_TOKEN'),
+        "Content-Type": "application/json"
+    }
+    response = requests.request("POST", url, headers=headers, data=payload)
+    print(response.text)
+
 
 def send_normal_email(data):
     send_mail(
@@ -33,3 +51,6 @@ def send_normal_email(data):
         recipient_list=[data['to_email']],
         fail_silently=False,
     )
+
+
+
