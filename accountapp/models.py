@@ -41,6 +41,9 @@ class User(AbstractBaseUser, PermissionsMixin):
             'access': str(refresh.access_token)
         }
 
+    class meta:
+        db_table = 'users'
+
 class Admin(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='admin')
     is_staff = models.BooleanField(default=False)
@@ -50,11 +53,17 @@ class Admin(models.Model):
     def __str__(self):
         return self.user.email
 
+    class Meta:
+        db_table = 'admins'
+
 class Learner(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.user.email
+
+    class Meta:
+        db_table = 'learners'
 
 class OneTimePassword(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -62,3 +71,6 @@ class OneTimePassword(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - {self.code}"
+
+    class Meta:
+        db_table = 'OTP'
