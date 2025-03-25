@@ -4,7 +4,7 @@ from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_2
 import random
 from flashcardapp.models import Flashcard
 from flashcardapp.serializers import FlashcardSerializer
-from .serializers import GeneratedTestSerializer
+from .serializers import GeneratedTestSerializer, TestBatchSerializer
 from .tasks import validate_learner_answer_with_ai_task
 from django.http import Http404
 from rest_framework.exceptions import NotFound
@@ -112,3 +112,22 @@ class SaveTestResults(generics.CreateAPIView):
                     'error': str(e),
                     'successful': False
                 }, status=HTTP_400_BAD_REQUEST)
+
+class SaveGeneratedTestBatch(generics.CreateAPIView):
+    serializer_class = TestBatchSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            self.perform_create(serializer)
+            return Response({
+                'message': 'Test Batch created successfully.',
+                'data': serializer.data,
+                'successful': True
+            }, status=HTTP_201_CREATED)
+        else:
+            return Response({
+                'message': 'Test Batch could not be created, please try again.',
+                'errors': serializer.errors,
+                'successful': False
+            }, status=HTTP_400_BAD_REQUEST)

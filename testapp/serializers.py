@@ -1,6 +1,7 @@
 from flashcardapp.models import Flashcard
 from rest_framework import serializers
-from .models import GeneratedTest
+from .models import GeneratedTest, TestBatch
+
 
 class BulkCreateGeneratedTestSerializer(serializers.ListSerializer):
     def create(self, validated_data):
@@ -11,11 +12,14 @@ class BulkCreateGeneratedTestSerializer(serializers.ListSerializer):
             raise serializers.ValidationError(f"Bulk create failed: {str(e)}")
 
 class GeneratedTestSerializer(serializers.ModelSerializer):
-    batch_id = serializers.UUIDField(
+    batch = serializers.PrimaryKeyRelatedField(
+        queryset=TestBatch.objects.all(),
         required=True,
         error_messages={
             "required": "Please provide the test's batch id",
+            "invalid": "Invalid UUID format"
         })
+
 
     flashcard_instance = serializers.PrimaryKeyRelatedField(
         queryset=Flashcard.objects.all(),
@@ -51,8 +55,18 @@ class GeneratedTestSerializer(serializers.ModelSerializer):
     class Meta:
         model = GeneratedTest
         list_serializer_class = BulkCreateGeneratedTestSerializer
-        fields = ['batch_id', 'flashcard_instance', 'learner_answer', 'is_correct', 'created_at', 'corrected_at']
+        fields = ['batch', 'flashcard_instance', 'learner_answer', 'is_correct', 'created_at', 'corrected_at']
         read_only_fields = ['deleted_at', 'restored_at', 'transaction_id']
 
+class TestBatchSerializer(serializers.ModelSerializer):
+    batch_id = serializers.UUIDField(
+        required=True,
+        error_messages={
+            "required": "Please provide the test's batch id",
+        })
 
+    class Meta:
+        model = TestBatch
+        fields = ['id', 'batch_id', 'created_at']
+        read_only_fields = ['id', 'created_at']
 
