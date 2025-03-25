@@ -52,3 +52,4 @@ pip install pyclean
 pip install pillow
 pip install protobuf
 pip install httplib2
+pip install mailtrap
