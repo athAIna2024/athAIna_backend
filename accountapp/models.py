@@ -41,7 +41,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             'access': str(refresh.access_token)
         }
 
-    class meta:
+    class Meta:
         db_table = 'users'
 
 class Admin(models.Model):
