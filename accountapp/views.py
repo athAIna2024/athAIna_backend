@@ -82,19 +82,6 @@ class VerifyUserEmail(GenericAPIView):
 
 
 class LoginUserView(GenericAPIView):
-    #
-    # # Original Code
-    # serializer_class = LoginSerializer
-    # def post(self, request):
-    #     serializer = self.serializer_class(data=request.data, context={'request': request})
-    #     serializer.is_valid(raise_exception=True)
-    #     response = Response(serializer.data, status=status.HTTP_200_OK)
-    #     access_token = serializer.data.get('access_token')
-    #     refresh_token = serializer.data.get('refresh_token')
-    #     response.set_cookie('access_token', access_token, httponly=True,samesite='Lax',secure=False, max_age=3600)  # 1 hour REMINDER: Set true when in production yung secure, debug lang naka false
-    #     response.set_cookie('refresh_token', refresh_token, httponly=True,samesite='Lax',secure=False, max_age=1209600)  # 30 days
-    #     return Response({serializer.data,}, status=status.HTTP_200_OK)
-
     # Updated Code
     serializer_class = LoginSerializer
 
@@ -130,6 +117,7 @@ class LoginUserView(GenericAPIView):
                 'user_id': user.id,
                 'email':email,
                 'login_date': timezone.now(),
+                'user_date_joined': user.date_joined,
                 'successful': True
             }, status=status.HTTP_200_OK)
             response.set_cookie('access_token', str(refresh.access_token), httponly=True, samesite='None', secure=True,

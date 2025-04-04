@@ -33,12 +33,19 @@ def send_code_to_user(email):
     # d_email.send(fail_silently=True)
 
 # for testing
-    url = "https://sandbox.api.mailtrap.io/api/send/2916017"
-    payload = "{\"from\":{\"email\":\"hello@demomailtrap.com\",\"name\":\"Athaina Team\"},\"to\":[{\"email\":\"test@test.com\"}],\"template_uuid\":\"6e7712d6-bd09-487f-b816-7055d14dd620\",\"template_variables\":{\"otp\":\""+otp_code+"\"}}"
+    url = "https://sandbox.api.mailtrap.io/api/send/3571963"
+
+    payload = "{\"from\":{\"email\":\"hello@demomailtrap.co\",\"name\":\"Mailtrap Test\"},\"to\":[{\"email\":\"athaina2024@gmail.com\"}],\"template_uuid\":\"0543fda7-d8cd-4f2c-ab26-559a13a76466\",\"template_variables\":{\"otp_code\":\""+otp_code+"\"}}"
+
+    print(env('MAILTRAP_API_TOKEN'))
     headers = {
+
         "Authorization": "Bearer "+ env('MAILTRAP_API_TOKEN'),
+
         "Content-Type": "application/json"
+
     }
+
     response = requests.request("POST", url, headers=headers, data=payload)
     print(response.text)
 
