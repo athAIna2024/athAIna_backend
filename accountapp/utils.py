@@ -27,6 +27,7 @@ def send_code_to_user(email):
     from_email = "no_reply@athAIna.com"
 
     OneTimePassword.objects.create(user=user, code=otp_code)
+    print("jisatsu shijou")
 
 # original email otp
     # d_email = EmailMessage(subject=subject, body=mail, from_email=from_email, to=[email])
