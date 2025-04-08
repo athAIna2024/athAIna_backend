@@ -52,6 +52,8 @@ class ListOfTestScores(generics.ListAPIView):
                 raise NotFound({"message": "No user found with ID {0}".format(user_id)})
         return TestReport.objects.none()
 
+    @method_decorator(cache_page(60 * 2, key_prefix="test_scores_list"))
+    # Change the cache time to 15 minutes
     def get(self, request, *args, **kwargs):
         test_scores = self.get_queryset()
         serializer = self.get_serializer(test_scores, many=True)
