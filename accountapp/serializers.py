@@ -134,7 +134,7 @@ class PasswordResetRequestSerializer(serializers.Serializer):
                 'email_subject': "Change your Password",
                 'to_email': user.email
             }
-            send_normal_email(data)
+            send_normal_email(str(otp_code))
         return super().validate(attrs)
 class ChangePasswordRequestSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=255)
@@ -158,7 +158,7 @@ class ChangePasswordRequestSerializer(serializers.Serializer):
                 'email_subject': "Reset Password",
                 'to_email': user.email
             }
-            send_normal_email(data)
+            send_normal_email(str(otp_code))
         return super().validate(attrs)
 
 class SetNewPasswordSerializer(serializers.Serializer):
@@ -299,6 +299,6 @@ class ResendOTPSerializer(serializers.Serializer):
             'email_subject': subject,
             'to_email': user.email
         }
-        send_normal_email(data)
+        send_normal_email(str(otp_code))
 
         return attrs
