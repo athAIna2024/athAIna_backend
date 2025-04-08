@@ -56,15 +56,15 @@ class ListOfTestScores(generics.ListAPIView):
         if not serializer.data:
             return Response({
                 'message': 'No test scores found.',
-                'successful': False
-            }, status=HTTP_400_BAD_REQUEST)
+                'successful': True,
+            }, status=HTTP_200_OK)
         return Response({
             'message': 'Test scores found.',
             'data': serializer.data,
             'successful': True
         }, status=HTTP_200_OK)
 
-class ListOfTestScoresBySubjectAndDate(generics.ListAPIView):
+class ListOfTestScoresByStudySetAndDate(generics.ListAPIView):
     serializer_class = TestReportSerializerReadOnly
 
     def get_queryset(self):
