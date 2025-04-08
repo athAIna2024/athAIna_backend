@@ -93,7 +93,7 @@ class ListOfTestScoresByStudySetAndDate(generics.ListAPIView):
                 raise NotFound({"message": "No user found with ID {0}".format(user_id)})
         return TestReport.objects.none()
 
-    @method_decorator(cache_page(60 * 2, key_prefix="list_of_test_scores_by_studyset_and_date"))
+    @method_decorator(cache_page(60 * 2, key_prefix="test_scores_list_by_studyset_and_date"))
     # Cache for 15 minutes
     def get(self, request, *args, **kwargs):
         test_scores = self.get_queryset()
