@@ -10,6 +10,9 @@ from django.http import Http404
 from datetime import datetime
 from django.utils import timezone
 
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+
 class SaveTestScore(generics.CreateAPIView):
     serializer_class = TestReportSerializer
 
@@ -33,7 +36,7 @@ class SaveTestScore(generics.CreateAPIView):
 class ListOfTestScores(generics.ListAPIView):
     serializer_class = TestReportSerializerReadOnly
 
-    def get_queryset(self):
+    def get_queryset(self): # Directly from database
         user_id = self.request.query_params.get('user_id')
 
         if user_id:
@@ -64,6 +67,7 @@ class ListOfTestScores(generics.ListAPIView):
             'successful': True
         }, status=HTTP_200_OK)
 
+
 class ListOfTestScoresByStudySetAndDate(generics.ListAPIView):
     serializer_class = TestReportSerializerReadOnly
 
@@ -89,6 +93,8 @@ class ListOfTestScoresByStudySetAndDate(generics.ListAPIView):
                 raise NotFound({"message": "No user found with ID {0}".format(user_id)})
         return TestReport.objects.none()
 
+    @method_decorator(cache_page(60 * 2, key_prefix="list_of_test_scores_by_studyset_and_date"))
+    # Cache for 15 minutes
     def get(self, request, *args, **kwargs):
         test_scores = self.get_queryset()
         serializer = self.get_serializer(test_scores, many=True)
