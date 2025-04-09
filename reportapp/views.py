@@ -12,7 +12,6 @@ from django.utils import timezone
 
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
-from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 
 class SaveTestScore(generics.CreateAPIView):
     serializer_class = TestReportSerializer
@@ -52,6 +51,8 @@ class ListOfTestScores(generics.ListAPIView):
             except User.DoesNotExist:
                 raise NotFound({"message": "No user found with ID {0}".format(user_id)})
         return TestReport.objects.none()
+
+    @method_decorator(cache_page(60 * 2, key_prefix='list_test_scores'))# Cache for 2 minutes
     # Change the cache time to 15 minutes
     def get(self, request, *args, **kwargs):
         test_scores = self.get_queryset()
@@ -93,6 +94,8 @@ class ListOfTestScoresByStudySetAndDate(generics.ListAPIView):
             except User.DoesNotExist:
                 raise NotFound({"message": "No user found with ID {0}".format(user_id)})
         return TestReport.objects.none()
+
+    @method_decorator(cache_page(60 * 2, key_prefix="test_scores_studyset_date"))
     # Cache for 15 minutes
     def get(self, request, *args, **kwargs):
         test_scores = self.get_queryset()
