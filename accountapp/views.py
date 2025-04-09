@@ -412,10 +412,21 @@ class CustomTokenRefreshView(TokenRefreshView):
         response = super().post(request, *args, **kwargs)
         if response.status_code == status.HTTP_200_OK:
             try:
-                old_refresh_token = request.data.get('refresh')
+                old_refresh_token = request.COOKIES.get('refresh_token')
                 if old_refresh_token:
                     old_token = RefreshToken(old_refresh_token)
                     old_token.blacklist()
+
+                # Extract tokens from the response
+                refresh_token = response.data.get('refresh')
+                access_token = response.data.get('access')
+                csrf = get_token(request)
+
+                # Set cookies for the tokens
+                response.set_cookie('access_token', access_token, httponly=True, samesite='None', secure=True, max_age=3600)
+                response.set_cookie('refresh_token', refresh_token, httponly=True, samesite='None', secure=True, max_age=604800)
+                response.set_cookie('athAIna_csrfToken', csrf, samesite='None', secure=True)
+
                 response.data['message'] = 'Token refreshed successfully'
             except Exception as e:
                 return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
