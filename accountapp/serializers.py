@@ -103,7 +103,6 @@ class LoginSerializer(serializers.ModelSerializer):
             raise AuthenticationFailed('Account is not verified')
 
         user_tokens = user.token()
-
         return {
             'email': user.email,
             'password': password,
@@ -134,7 +133,7 @@ class PasswordResetRequestSerializer(serializers.Serializer):
                 'email_subject': "Change your Password",
                 'to_email': user.email
             }
-            send_normal_email(str(otp_code))
+            send_normal_email(data)
         return super().validate(attrs)
 class ChangePasswordRequestSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=255)
@@ -158,7 +157,7 @@ class ChangePasswordRequestSerializer(serializers.Serializer):
                 'email_subject': "Reset Password",
                 'to_email': user.email
             }
-            send_normal_email(str(otp_code))
+            send_normal_email(data)
         return super().validate(attrs)
 
 class SetNewPasswordSerializer(serializers.Serializer):
@@ -191,6 +190,7 @@ class SetNewPasswordSerializer(serializers.Serializer):
 
 
         return attrs
+
 
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(max_length=100, min_length=8, write_only=True)
@@ -293,12 +293,13 @@ class ResendOTPSerializer(serializers.Serializer):
             subject = "Reset Your Password"
             email_body = f"Hello {user.email},\n\nYour One Time Password for Reset Password is {otp_code.code}\n\nRegards,\nathAIna Team"
 
-        # email_body = f"Your OTP code is {otp_code.code}"
+
+# email_body = f"Your OTP code is {otp_code.code}"
         data = {
             'email_body': email_body,
             'email_subject': subject,
             'to_email': user.email
         }
-        send_normal_email(str(otp_code))
+        send_normal_email(data)
 
         return attrs
