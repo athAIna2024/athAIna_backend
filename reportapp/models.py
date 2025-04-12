@@ -1,12 +1,13 @@
 from django.db import models
+from django.utils import timezone
+from django_softdelete.models import SoftDeleteModel
 
-# Create your models here.
-class TestResult(models.Model):
-    studyset_id = models.ForeignKey('studysetapp.StudySet', on_delete=models.CASCADE, related_name='testresult')
-    learner_id = models.ForeignKey('accountapp.Learner', on_delete=models.CASCADE, related_name='testresult')
+class TestReport(SoftDeleteModel):
+    studyset_instance = models.ForeignKey('studysetapp.StudySet', on_delete=models.CASCADE, null=True, blank=True)
+    batch = models.ForeignKey('testapp.TestBatch', on_delete=models.CASCADE, null=True, blank=True)
     score = models.IntegerField()
-    overall_score = models.IntegerField()
-    submitted_at = models.DateTimeField(auto_now_add=True)
+    number_of_questions = models.IntegerField()
+    submitted_at = models.DateTimeField(default=timezone.now)
 
-    def __str__(self):
-        return self.learner.user.username + ' ' + self.studyset_chosen.title
+    class Meta:
+        db_table = 'test_reports'
