@@ -1,6 +1,3 @@
-from datetime import datetime, timedelta
-from tokenize import TokenError
-
 from django.contrib.auth import authenticate
 from django.contrib.sites.shortcuts import get_current_site
 from django.http import JsonResponse
@@ -20,7 +17,10 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework_simplejwt.exceptions import TokenError
 
+from accountapp import serializers
 from accountapp.models import OneTimePassword, User, Learner
 from accountapp.serializers import UserRegistrationSerializer, VerifyUserEmailSerializer, LoginSerializer, \
     SetNewPasswordSerializer, \
@@ -31,8 +31,6 @@ from rest_framework.response import Response
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.encoding import smart_str, DjangoUnicodeDecodeError, smart_bytes
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-
-from athAIna_backend import settings
 
 
 # Create your views here.
@@ -87,6 +85,7 @@ class VerifyUserEmail(GenericAPIView):
 
 
 class LoginUserView(GenericAPIView):
+    # Updated Code
     serializer_class = LoginSerializer
 
     def post(self, request, *args, **kwargs):
@@ -111,9 +110,6 @@ class LoginUserView(GenericAPIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         if user is not None:
-            # Calculate token expiry times
-            access_expiry = datetime.now() + timedelta(minutes=15)
-            refresh_expiry = datetime.now() + timedelta(days=1)
 
             refresh = RefreshToken.for_user(user)
             csrf = get_token(request)
@@ -124,13 +120,12 @@ class LoginUserView(GenericAPIView):
                 'user_id': user.id,
                 'email':email,
                 'login_date': timezone.now(),
-                'successful': True,
-                'access_expiry': access_expiry.timestamp(),
-                'refresh_expiry': refresh_expiry.timestamp(),
+                'user_date_joined': user.date_joined,
+                'successful': True
             }, status=status.HTTP_200_OK)
-            response.set_cookie('access_token', str(refresh.access_token), httponly=True, samesite='None', secure=True,
+            response.set_cookie('access_token', str(refresh.access_token), httponly=False, samesite='None', secure=True,
                                 max_age=3600)
-            response.set_cookie('refresh_token', str(refresh), httponly=True, samesite='None', secure=True,
+            response.set_cookie('refresh_token', str(refresh), httponly=False, samesite='None', secure=True,
                                 max_age=604800)
             response.set_cookie('athAIna_csrfToken',csrf, samesite='None', secure=True)
             return response
@@ -305,29 +300,59 @@ class ChangePasswordView(UpdateAPIView):
 
 class LogoutUserView(GenericAPIView):
     serializer_class = LogoutUserSerializer
-    # permission_classes = [IsAuthenticated]
 
-    @method_decorator(csrf_protect)
     def post(self, request):
         try:
+            # Retrieve tokens from cookies
             refresh_token = request.COOKIES.get('refresh_token')
-            csrf_token = request.COOKIES.get('athAIna_csrfToken')
-            token = RefreshToken(refresh_token)
-            token.blacklist()
+            access_token = request.COOKIES.get('access_token')
+
+            if not refresh_token or not access_token:
+                return Response({
+                    "error": "Tokens not found in cookies",
+                    "successful": False
+                }, status=status.HTTP_401_UNAUTHORIZED)
+
+            # Validate the access token
+            try:
+                # Use AccessToken class instead of RefreshToken for access tokens
+                access_token_obj = AccessToken(access_token)
+                # Access tokens don't need explicit expiration check as they're validated upon creation
+            except TokenError:
+                return Response({
+                    "error": "Access token is expired or invalid",
+                    "successful": False
+                }, status=status.HTTP_401_UNAUTHORIZED)
+
+            # Validate tokens using the serializer
+            serializer = self.get_serializer(data={
+                'refresh_token': refresh_token,
+                'access_token': access_token
+            })
+            serializer.is_valid(raise_exception=True)
+
+            # Blacklist the refresh token
+            serializer.save()
+
+            # Delete cookies and return success response
             response = Response({
                 "successful": True,
                 "message": "User logged out successfully"
-            },status=status.HTTP_204_NO_CONTENT)
+            }, status=status.HTTP_204_NO_CONTENT)
             response.delete_cookie('access_token')
             response.delete_cookie('refresh_token')
-            response.delete_cookie('athAIna_csrfToken')
             return response
+
+        except serializers.ValidationError as e:
+            return Response({
+                "error": e.detail,
+                "successful": False
+            }, status=status.HTTP_401_UNAUTHORIZED)
         except Exception as e:
             return Response({
-                "error": "Invalid token",
+                "error": f"An error occurred during logout: {str(e)}",
                 "successful": False
-            },status=status.HTTP_400_BAD_REQUEST)
-
+            }, status=status.HTTP_400_BAD_REQUEST)
 class DeleteUserView(GenericAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -419,74 +444,69 @@ class VerifyChangePasswordOTPView(GenericAPIView):
 
 class CustomTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
-        refresh_token = request.COOKIES.get('refresh_token')
-
-        if not refresh_token:
-            return Response({
-                "message": "No refresh token provided",
-                "successful": False
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        # Add refresh token to request data
-        request.data['refresh'] = refresh_token
-
         try:
-            response = super().post(request, *args, **kwargs)
+            # Retrieve the refresh token from the cookies
+            refresh_token = request.COOKIES.get('refresh_token')
+            print("Refresh Token:", refresh_token)
 
-            if response.status_code == status.HTTP_200_OK:
-                # Calculate new expiry times
-                access_expiry = datetime.now() + settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME']
-                refresh_expiry = datetime.now() + settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME']
-
-                # Blacklist old refresh token
-                old_token = RefreshToken(refresh_token)
-                old_token.blacklist()
-
-                # Update response with new tokens and expiry times
-                response_data = {
-                    'access': response.data['access'],
-                    'refresh': response.data['refresh'],
-                    'access_expiry': access_expiry.timestamp(),
-                    'refresh_expiry': refresh_expiry.timestamp(),
-                    'message': 'Token refreshed successfully',
-                    'successful': True
-                }
-
-                response = Response(response_data, status=status.HTTP_200_OK)
-
-                # Set new cookies
-                response.set_cookie(
-                    'access_token',
-                    response.data['access'],
-                    httponly=True,
-                    samesite='None',
-                    secure=True,
-                    max_age=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds()
-                )
-                response.set_cookie(
-                    'refresh_token',
-                    response.data['refresh'],
-                    httponly=True,
-                    samesite='None',
-                    secure=True,
-                    max_age=settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds()
+            if not refresh_token:
+                return Response(
+                    {"error": "No refresh token found in cookies", "successful": False},
+                    status=status.HTTP_401_UNAUTHORIZED
                 )
 
-                return response
+            # Validate the refresh token
+            try:
+                token = RefreshToken(refresh_token)
+                # Check if token is valid and not expired
+                token.check_exp()
 
-        except TokenError:
-            return Response({
-                "message": "Invalid or expired refresh token",
-                "successful": False
-            }, status=status.HTTP_401_UNAUTHORIZED)
+                # Get user ID from token payload
+                user_id = token.payload.get('user_id')
+                if not user_id:
+                    return Response(
+                        {"error": "Invalid token payload", "successful": False},
+                        status=status.HTTP_401_UNAUTHORIZED
+                    )
+
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return Response(
+                    {"error": "User not found", "successful": False},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            except Exception as e:
+                return Response(
+                    {"error": "Invalid or expired refresh token", "successful": False},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+
+            # Blacklist the old token
+            token.blacklist()
+
+            # Generate new tokens for the user
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            csrf = get_token(request)
+
+            # Set cookies for the new tokens
+            response = Response({
+                'access': access_token,
+                'message': 'Token refreshed successfully',
+                'successful': True
+            }, status=status.HTTP_200_OK)
+            response.set_cookie('access_token', access_token, httponly=False, samesite='None', secure=True,
+                                max_age=3600)
+            response.set_cookie('refresh_token', str(refresh), httponly=False, samesite='None', secure=True,
+                                max_age=604800)
+            response.set_cookie('athAIna_csrfToken', csrf, samesite='None', secure=True)
+
+            return response
         except Exception as e:
-            return Response({
-                "message": str(e),
-                "successful": False
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        return response
-
+            return Response(
+                {"error": f"An error occurred while refreshing the token: {str(e)}", "successful": False},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 class CheckUserTokensView(GenericAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -513,28 +533,4 @@ class ResendOTPView(GenericAPIView):
         return Response({
             "successful": True,
             "message": "OTP has been resent to your email"
-        }, status=status.HTTP_200_OK)
-
-class CheckUserActivityView(GenericAPIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, *args, **kwargs):
-        user = request.user
-        last_activity = user.last_activity
-
-        if not last_activity:
-            return Response({
-                "active": False,
-                "message": "No recent activity found"
-            }, status=status.HTTP_200_OK)
-
-        current_time = timezone.now()
-        # Max inactivity period (30 minutes)
-        max_inactivity = timedelta(minutes=30)
-        is_active = (current_time - last_activity) < max_inactivity
-
-        return Response({
-            "active": is_active,
-            "last_activity": last_activity,
-            "max_inactivity_minutes": 30
         }, status=status.HTTP_200_OK)
