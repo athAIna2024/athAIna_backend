@@ -22,7 +22,7 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["athaina.software"]
 
 # Application definition
 
@@ -178,8 +178,7 @@ MEDIA_ROOT = BASE_DIR / env("MEDIA_ROOT_LOCAL")
 
 # CORS
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = ["http://localhost:5173" ]
-CORS_TRUSTED_ORIGINS = ["http://localhost:5173" ]
+CORS_TRUSTED_ORIGINS = ["http://localhost:5173","https://athaina.software" ]
 CORS_ORIGIN_WHITELIST = env.list('CORS_ORIGIN_WHITELIST', default=["http://localhost:5173"])
 CSRF_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_SAMESITE = 'None'
@@ -193,7 +192,7 @@ SESSION_COOKIE_AGE = 604800
 SESSION_COOKIE_NAME = 'athAIna_session'
 CSRF_COOKIE_NAME = 'athAIna_csrfToken'
 CSRF_COOKIE_AGE = 604800
-CSRF_TRUSTED_ORIGINS = ["http://localhost:5173"]
+CSRF_TRUSTED_ORIGINS = ["http://localhost:5173","https://athaina.software"]
 
 
 

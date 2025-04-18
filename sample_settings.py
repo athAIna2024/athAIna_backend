@@ -40,14 +40,18 @@
 #     'studysetapp.apps.StudysetappConfig',
 #     'reportapp.apps.ReportappConfig',
 #     'contactinquiryapp.apps.ContactinquiryappConfig',
+#     'faqapp.apps.FaqappConfig',
 #
 #     'rest_framework',
 #     'rest_framework.authtoken',
 #     'corsheaders',
+#     'rest_framework_simplejwt.token_blacklist'
 #
 # ]
 #
 # MIDDLEWARE = [
+#     'corsheaders.middleware.CorsMiddleware',
+#     'django.middleware.common.CommonMiddleware',
 #     'django.middleware.security.SecurityMiddleware',
 #     'django.contrib.sessions.middleware.SessionMiddleware',
 #     'django.middleware.common.CommonMiddleware',
@@ -55,8 +59,8 @@
 #     'django.contrib.auth.middleware.AuthenticationMiddleware',
 #     'django.contrib.messages.middleware.MessageMiddleware',
 #     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+#     'accountapp.middleware.TokenFromCookieMiddleware',
 #
-#     'corsheaders.middleware.CorsMiddleware',
 # ]
 #
 # ROOT_URLCONF = 'athAIna_backend.urls'
@@ -84,7 +88,7 @@
 # # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 #
 #
-# DATABASE = {
+# DATABASES = {
 #     'default': {
 #         'ENGINE': env('DB_ENGINE'),
 #         'NAME': env('DB_NAME'),
@@ -94,6 +98,7 @@
 #         'PORT': env('DB_PORT'),
 #     }
 # }
+#
 #
 # AUTH_USER_MODEL = 'accountapp.User'
 #
@@ -154,11 +159,30 @@
 #
 # DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 #
-# MEDIA_URL = env("MEDIA_URL_LOCAL")
+# # MEDIA_URL = env("MEDIA_URL_LOCAL")
+# MEDIA_URL = '/media/'
 # MEDIA_ROOT = BASE_DIR / env("MEDIA_ROOT_LOCAL")
 #
 # # CORS
-# CORS_ORIGIN_WHITELIST = env.list('CORS_ORIGIN_WHITELIST', default=[])
+# CORS_ALLOW_CREDENTIALS = True
+# CORS_ALLOWED_ORIGINS = ["http://localhost:5173" ]
+# CORS_TRUSTED_ORIGINS = ["http://localhost:5173" ]
+# CORS_ORIGIN_WHITELIST = env.list('CORS_ORIGIN_WHITELIST', default=["http://localhost:5173"])
+# CSRF_COOKIE_SAMESITE = 'None'
+# SESSION_COOKIE_SAMESITE = 'None'
+# CSRF_COOKIE_HTTPONLY = False
+# SESSION_COOKIE_HTTPONLY = True
+# CORS_ALLOW_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
+# CORS_ALLOW_HEADERS = ['accept', 'accept-encoding', 'authorization', 'content-type', 'origin', 'x-csrftoken']
+# SESSION_COOKIE_SECURE = False
+# CSRF_COOKIE_SECURE = True
+# SESSION_COOKIE_AGE = 604800
+# SESSION_COOKIE_NAME = 'athAIna_session'
+# CSRF_COOKIE_NAME = 'athAIna_csrfToken'
+# CSRF_COOKIE_AGE = 604800
+# CSRF_TRUSTED_ORIGINS = ["http://localhost:5173"]
+#
+#
 #
 # EMAIL_HOST=env('EMAIL_HOST')
 # EMAIL_HOST_USER=env('EMAIL_HOST_USER')
@@ -173,11 +197,16 @@
 #     'CELERY_TASK_SERIALIZER': env('CELERY_TASK_SERIALIZER'),
 #     'CELERY_RESULT_SERIALIZER': env('CELERY_RESULT_SERIALIZER'),
 #     'CELERY_TIMEZONE': env('CELERY_TIMEZONE'),
+#     'CELERY_RESULT_EXPIRES': env('CELERY_RESULT_EXPIRES'),
 # }
 #
 # CACHES = {
 #     "default": {
-#         "BACKEND": "django.core.cache.backends.redis.RedisCache",
+#         "BACKEND": 'django_redis.cache.RedisCache',
 #         "LOCATION": env('REDIS_URL'),
+#         "OPTIONS": {
+#             "CLIENT_CLASS": 'django_redis.client.DefaultClient',
+#         }
 #     }
 # }
+#
