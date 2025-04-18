@@ -5,7 +5,7 @@ from .views import RegisterView, VerifyUserEmail, LoginUserView, OTPVerification
     LogoutUserView, \
     ChangePasswordView, PasswordChangeRequestView, VerifyPasswordChangeOTPView, ChangePasswordRequestView, \
     VerifyChangePasswordOTPView, SetChangePassword, CustomTokenRefreshView, SetNewPassword, CheckUserTokensView, \
-    ResendOTPView, CheckUserActivityView
+    ResendOTPView
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -35,7 +35,5 @@ urlpatterns = [
     path('checkToken/',CheckUserTokensView.as_view(), name='checkToken'),
 
     path('resend-otp/', ResendOTPView.as_view(), name='resend-otp'),
-
-    path('check-activity/', CheckUserActivityView.as_view(), name='check-activity'),
 
 ]
