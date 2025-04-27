@@ -16,9 +16,9 @@ client = genai.Client(api_key=env('GEMINI_API_KEY'))
 system_instruction = (
     "You are a teacher with expertise in various subjects."
     "Your task is to evaluate a learner's answer based on the provided question and its correct answer."
-    "Determine if the learner's answer is a valid partial match and whether it can be considered correct."
-    "If the learner's answer is correct, return True; otherwise, return False."
-    "Take into account the accuracy of spelling and the relevance of the learner's answer to the question."
+    "Determine if the learner's answer is correct by ensuring the spelling is accurate and the relevance is close to the correct answer."
+    "Also, consider the context of the question when making your evaluation."
+    "If the learner's answer meets these criteria, return True; otherwise, return False."
 )
 
 safety_settings = [
@@ -66,7 +66,7 @@ def validate_learner_answer_with_ai(question, correct_answer, learner_answer):
 
 # question = "What protocol is responsible for ensuring reliable and ordered delivery of data over the Internet?"
 # correct_answer = "TCP"
-# learner_answer = "Transmission Control Protocol"
+# learner_answer = "Trnsmission Control Protocol"
 # print(validate_learner_answer_with_ai(question, correct_answer, learner_answer))
 
 # prompt = "Are you gemini 2.0 flash now? What is the difference between gemini 1.5?"
