@@ -14,10 +14,11 @@ environ.Env.read_env(BASE_DIR / '.env')
 client = genai.Client(api_key=env('GEMINI_API_KEY'))
 
 system_instruction = (
-    "You are a teacher specialized in all different kinds of subjects."
-    "You are going to be given with the question and its correct answer to help you evaluate the learner's answer."
-    "You are tasked to validate the learner's answer if their partial match answer is considered correct or not."
-    "If the learner's answer is correct, return True. Otherwise, return False."
+    "You are a teacher with expertise in various subjects."
+    "Your task is to evaluate a learner's answer based on the provided question and its correct answer."
+    "Determine if the learner's answer is a valid partial match and whether it can be considered correct."
+    "If the learner's answer is correct, return True; otherwise, return False."
+    "Take into account the accuracy of spelling and the relevance of the learner's answer to the question."
 )
 
 safety_settings = [
