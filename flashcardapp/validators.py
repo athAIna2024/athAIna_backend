@@ -6,6 +6,6 @@ def validate_image_size(image):
 
     # Multiplying by 1024 to convert KB to bytes
     if filesize > MEGA_BYTE_LIMIT * 1024 * 1024:
-        raise ValidationError(f'Please keep the image size under {MEGA_BYTE_LIMIT} KB.')
+        raise ValidationError(f'Please keep the image size under {MEGA_BYTE_LIMIT} MB.')
 
 
