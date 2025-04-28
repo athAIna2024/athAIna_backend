@@ -88,7 +88,7 @@ class LoginUserView(GenericAPIView):
     serializer_class = LoginSerializer
 
     def post(self, request, *args, **kwargs):
-        try:
+        # try:
             # Retrieve and blacklist the old refresh token
             old_refresh_token = request.COOKIES.get('refresh_token')
             if old_refresh_token:
@@ -128,8 +128,8 @@ class LoginUserView(GenericAPIView):
             else:
                 return Response({'detail': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        except Exception as e:
-            return Response({"error": f"An error occurred: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        # except Exception as e:
+        #     return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
 
 
 
