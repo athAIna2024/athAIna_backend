@@ -36,6 +36,10 @@ To install Docker Desktop on Windows,
 2. Install Docker Desktop from the official website.
  
 List of libraries to install
+One Line Command
+pip install django djangorestframework django-cors-headers django-environ django-redis django-soft-delete djangorestframework-simplejwt google-genai mysqlclient requests celery pyclean pillow protobuf httplib2 mailtrap "redis[hiredis]"
+
+Inidividual Command
 pip install django
 pip install djangorestframework
 pip install django-cors-headers
@@ -45,7 +49,6 @@ pip install django-soft-delete
 pip install djangorestframework-simplejwt
 pip install google-genai
 pip install mysqlclient
-pip install redis
 pip install requests
 pip install celery
 pip install pyclean
@@ -53,3 +56,10 @@ pip install pillow
 pip install protobuf
 pip install httplib2
 pip install mailtrap
+pip install "redis[hiredis]"
+
+How to access redis cache keys
+docker ps
+docker exec -it redis_server redis-cli
+keys * // To check existence of cache keys, for testing set the cache duration to 1 or 2 minutes
+

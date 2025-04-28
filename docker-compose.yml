@@ -78,5 +78,12 @@ services:
       - 8080:80
     depends_on:
       - mysql_db
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    restart: unless-stopped
 volumes:
   mysql_data:

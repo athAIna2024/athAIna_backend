@@ -24,6 +24,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(auto_now_add=True)
     last_login = models.DateTimeField(auto_now=True)
     archive_date = models.DateTimeField(auto_now=False, null=True, blank=True)
+    last_activity = models.DateTimeField(auto_now=False, null=True, blank=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
