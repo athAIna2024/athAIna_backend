@@ -178,7 +178,7 @@ MEDIA_ROOT = BASE_DIR / env("MEDIA_ROOT_LOCAL")
 
 # CORS
 CORS_ALLOW_CREDENTIALS = True
-CORS_TRUSTED_ORIGINS = ["http://localhost:5173","https://athaina.software","https://athaina.onrender.com" ]
+CORS_TRUSTED_ORIGINS = env('CORS_TRUSTED_ORIGINS', default=["http://localhost:5173"])
 CORS_ORIGIN_WHITELIST = env.list('CORS_ORIGIN_WHITELIST', default=["http://localhost:5173"])
 CSRF_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_SAMESITE = 'None'
@@ -192,7 +192,8 @@ SESSION_COOKIE_AGE = 604800
 SESSION_COOKIE_NAME = 'athAIna_session'
 CSRF_COOKIE_NAME = 'athAIna_csrfToken'
 CSRF_COOKIE_AGE = 604800
-CSRF_TRUSTED_ORIGINS = ["http://localhost:5173","https://athaina.software","https://athaina.onrender.com"]
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=["http://localhost:5173"])
+CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=["http://localhost:5173"])
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

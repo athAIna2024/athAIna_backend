@@ -29,7 +29,7 @@ def send_code_to_user(email):
 
        Return to your OTP Verification page
        Alternatively you can copy and paste the link below in your browser
-       http://localhost:5173/verify_email
+       https://athaina.onrender.com/verify_email/
 
        Thank you for using athAIna.
 
