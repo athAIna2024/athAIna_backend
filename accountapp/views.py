@@ -439,12 +439,22 @@ class VerifyChangePasswordOTPView(GenericAPIView):
 class CustomTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         try:
-            # Retrieve the refresh token from the cookies
+            # Try to get refresh token from cookies first
             refresh_token = request.COOKIES.get('refresh_token')
+
+            # If not in cookies, check if it's in the request body
+            if not refresh_token and request.data.get('refresh'):
+                refresh_token = request.data.get('refresh')
+
+            # If still no refresh token, check authorization header
+            if not refresh_token and 'Authorization' in request.headers:
+                auth_header = request.headers['Authorization']
+                if auth_header.startswith('Bearer '):
+                    refresh_token = auth_header.split(' ')[1]
 
             if not refresh_token:
                 return Response(
-                    {"error": "No refresh token found in cookies", "successful": False},
+                    {"error": "No refresh token found", "successful": False},
                     status=status.HTTP_401_UNAUTHORIZED
                 )
 
@@ -464,15 +474,38 @@ class CustomTokenRefreshView(TokenRefreshView):
             access_token = str(refresh.access_token)
             csrf = get_token(request)
 
-            # Set cookies for the new tokens
+            # Set cookies with all necessary attributes
             response = Response({
                 'access': access_token,
+                'refresh': str(refresh),  # Include refresh token in response body as fallback
                 'message': 'Token refreshed successfully',
                 'successful': True
             }, status=status.HTTP_200_OK)
-            response.set_cookie('access_token', access_token, httponly=False, samesite='None', secure=True, max_age=3600)
-            response.set_cookie('refresh_token', str(refresh), httponly=False, samesite='None', secure=True, max_age=604800)
-            response.set_cookie('athAIna_csrfToken', csrf, samesite='None', secure=True)
+
+            # Set cookies with proper attributes for cross-site usage
+            response.set_cookie(
+                'access_token',
+                access_token,
+                httponly=False,  # Set to True for better security if not needed by JS
+                secure=True,
+                samesite='None',
+                max_age=3600
+            )
+            response.set_cookie(
+                'refresh_token',
+                str(refresh),
+                httponly=False,  # Set to True for better security if not needed by JS
+                secure=True,
+                samesite='None',
+                max_age=604800
+            )
+            response.set_cookie(
+                'athAIna_csrfToken',
+                csrf,
+                httponly=False,
+                secure=True,
+                samesite='None'
+            )
 
             return response
 
