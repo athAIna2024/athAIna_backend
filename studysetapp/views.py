@@ -83,11 +83,11 @@ class UpdateStudySet(generics.RetrieveUpdateAPIView):
         subject = serializer.validated_data.get('subject')
         serializer.save(title=title, description=description, subject=subject)
 
-    def put(self, request, *args, **kwargs):
+    def update(self, request, *args, **kwargs):
         studyset = self.get_object()
 
         # partial=True allows for partial updates
-        serializer = self.get_serializer(studyset, data=request.data, partial=True)
+        serializer = self.get_serializer(studyset, data=request.data, partial=False)
         if serializer.is_valid():
             self.perform_update(serializer)
             return Response({
