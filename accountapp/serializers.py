@@ -154,7 +154,7 @@ class ChangePasswordRequestSerializer(serializers.Serializer):
             email_body = f"Hello {user.email},\n\nYour One Time Password for Forgot Password is {otp_code.code}\n\nRegards,\nathAIna Team"
             data = {
                 'email_body': email_body,
-                'email_subject': f"Fogrot Password: {otp_code.code}",
+                'email_subject': f"Forgot Password: {otp_code.code}",
                 'to_email': user.email
             }
             send_normal_email(data)
@@ -284,7 +284,7 @@ class ResendOTPSerializer(serializers.Serializer):
 
         # Prepare email based on purpose
         if purpose == 'signup':
-            subject = "One Time Password for Email Verification"
+            subject = f"One Time Password for Email Verification"
             email_body = f"Hello {user.email},\n\nYour One Time Password for Email Verification is {otp_code.code}\n\nRegards,\nathAIna Team"
         elif purpose == 'change_password' :
             subject = f"Change Password: {otp_code.code}"
