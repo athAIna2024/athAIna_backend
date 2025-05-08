@@ -22,7 +22,7 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = ["athaina.software","athaina.onrender"]
+ALLOWED_HOSTS = ["localhost","athaina.software","athaina.onrender"]
 
 # Application definition
 
