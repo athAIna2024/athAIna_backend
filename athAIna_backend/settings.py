@@ -50,7 +50,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'accountapp.middleware.TokenExpiryMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -61,6 +60,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'accountapp.middleware.TokenFromCookieMiddleware',
+    'accountapp.middleware.InactiveUserMiddleware',
+    'accountapp.middleware.TokenExpiryMiddleware',
 
 ]
 

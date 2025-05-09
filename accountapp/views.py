@@ -88,45 +88,53 @@ class LoginUserView(GenericAPIView):
     serializer_class = LoginSerializer
 
     def post(self, request, *args, **kwargs):
-        # try:
-            # Retrieve and blacklist the old refresh token
-            old_refresh_token = request.COOKIES.get('refresh_token')
-            if old_refresh_token:
-                try:
-                    old_token = RefreshToken(old_refresh_token)
-                    old_token.blacklist()
-                except TokenError:
-                    pass  # Ignore if the token is already invalid or expired
+        # Retrieve and blacklist the old refresh token
+        old_refresh_token = request.COOKIES.get('refresh_token')
+        if old_refresh_token:
+            try:
+                old_token = RefreshToken(old_refresh_token)
+                old_token.blacklist()
+            except TokenError:
+                pass  # Ignore if the token is already invalid or expired
 
-            # Validate user credentials
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            email = serializer.validated_data['email']
-            password = serializer.validated_data['password']
-            user = authenticate(email=email, password=password)
+        # Validate user credentials
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+        password = serializer.validated_data['password']
+        user = authenticate(email=email, password=password)
 
-            if user is not None:
-                # Generate new tokens
-                refresh = RefreshToken.for_user(user)
-                csrf = get_token(request)
-                response = Response({
-                    'refresh': str(refresh),
-                    'access': str(refresh.access_token),
-                    'message': 'Login successful',
-                    'user_id': user.id,
-                    'email': email,
-                    'login_date': timezone.now(),
-                    'user_date_joined': user.date_joined,
-                    'successful': True
-                }, status=status.HTTP_200_OK)
+        if user is not None:
+            # Check if the user account is inactive
+            if user.status == user.INACTIVE:
+                return Response({
+                    'detail': 'This account has been deactivated',
+                    'successful': False
+                }, status=status.HTTP_401_UNAUTHORIZED)
 
-                # Set cookies for tokens
-                response.set_cookie('access_token', str(refresh.access_token), httponly=False, samesite='None', secure=True, max_age=3600)
-                response.set_cookie('refresh_token', str(refresh), httponly=False, samesite='None', secure=True, max_age=604800)
-                response.set_cookie('athAIna_csrfToken', csrf, samesite='None', secure=True)
-                return response
-            else:
-                return Response({'detail': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+            # Generate new tokens
+            refresh = RefreshToken.for_user(user)
+            csrf = get_token(request)
+            response = Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'message': 'Login successful',
+                'user_id': user.id,
+                'email': email,
+                'login_date': timezone.now(),
+                'user_date_joined': user.date_joined,
+                'successful': True
+            }, status=status.HTTP_200_OK)
+
+            # Set cookies for tokens
+            response.set_cookie('access_token', str(refresh.access_token), httponly=False, samesite='None', secure=True,
+                                max_age=3600)
+            response.set_cookie('refresh_token', str(refresh), httponly=False, samesite='None', secure=True,
+                                max_age=604800)
+            response.set_cookie('athAIna_csrfToken', csrf, samesite='None', secure=True)
+            return response
+        else:
+            return Response({'detail': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
         # except Exception as e:
         #     return Response(str(e), status=status.HTTP_400_BAD_REQUEST)

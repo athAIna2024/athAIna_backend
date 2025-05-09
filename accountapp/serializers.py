@@ -22,10 +22,29 @@ import re
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(max_length=69, min_length=8, write_only=True)
     password2 = serializers.CharField(max_length=69, min_length=8, write_only=True)
-
+    email = serializers.EmailField(
+        max_length=255,
+        error_messages={
+            'unique': 'user with this email address already exists.'
+        }
+    )
     class Meta:
         model = User
         fields = ['email', 'password', 'password2']
+        # Add this to explicitly set validators for email field
+        extra_kwargs = {
+            'email': {'validators': []}  # Remove default validators
+        }
+
+    def validate_email(self, value):
+        # This runs before the validate method
+        if User.objects.filter(email=value).exists():
+            user = User.objects.get(email=value)
+            if user.status == 'inactive':
+                raise serializers.ValidationError('This account has been deactivated. Please contact support.')
+            else:
+                raise serializers.ValidationError('user with this email address already exists.')
+        return value
 
     def validate(self, attrs):
         password = attrs.get('password', '')
@@ -75,6 +94,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 class VerifyUserEmailSerializer(serializers.Serializer):
     otp = serializers.CharField(max_length=6)
 
+
 class LoginSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(max_length=255, min_length=6)
     password = serializers.CharField(max_length=69, min_length=8, write_only=True)
@@ -85,20 +105,25 @@ class LoginSerializer(serializers.ModelSerializer):
         model = User
         fields = ['email', 'password', 'access_token', 'refresh_token']
 
+    def validate_email(self, value):
+        try:
+            validate_email(value)
+        except ValidationError:
+            raise serializers.ValidationError('Invalid email address format')
+
+        try:
+            user = User.objects.get(email=value)
+            if user.status == 'inactive':
+                raise serializers.ValidationError('This account has been deactivated. Please contact support.')
+        except User.DoesNotExist:
+            raise serializers.ValidationError('No user found with this email address')
+
+        return value
+
     def validate(self, attrs):
         email = attrs.get('email', '')
         password = attrs.get('password', '')
         request = self.context.get('request')
-
-        try:
-            validate_email(email)
-        except ValidationError:
-            raise serializers.ValidationError({'email': 'Invalid email address format'})
-
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            raise serializers.ValidationError({'email': 'No user found with this email address'})
 
         user = authenticate(request, email=email, password=password)
         if not user:

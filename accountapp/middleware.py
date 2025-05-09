@@ -52,3 +52,38 @@ class TokenExpiryMiddleware:
 
         response = self.get_response(request)
         return response
+
+
+class InactiveUserMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        auth_header = request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
+            try:
+                # Decode the token to get the user ID
+                decoded_token = AccessToken(token)
+                user_id = decoded_token['user_id']
+
+                # Check if the user is inactive
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
+                try:
+                    user = User.objects.get(id=user_id)
+                    if user.status == user.INACTIVE:
+                        return JsonResponse({
+                            'detail': 'This account has been deactivated',
+                            'successful': False
+                        }, status=401)
+                except User.DoesNotExist:
+                    pass
+
+            except (TokenError, jwt.ExpiredSignatureError):
+                # Let TokenExpiryMiddleware handle expired tokens
+                pass
+            except Exception:
+                pass
+
+        return self.get_response(request)
