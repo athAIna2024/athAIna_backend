@@ -206,10 +206,12 @@ class SetNewPassword(GenericAPIView):
                 "successful": False
             }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            # Make sure to return the response with serializer errors
+            # in the same format as other endpoints
             return Response({
-                "error": str(e)
+                "message": serializer.errors,
+                "successful": False
             }, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 
@@ -241,8 +243,10 @@ class SetChangePassword(GenericAPIView):
                 "successful": False
             }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            # Match the format used in SetNewPassword for consistency
             return Response({
-                "error": str(e)
+                "message": serializer.errors,
+                "successful": False
             }, status=status.HTTP_400_BAD_REQUEST)
 
 class OTPVerificationView(GenericAPIView):

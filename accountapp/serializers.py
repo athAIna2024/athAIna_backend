@@ -165,9 +165,11 @@ class ChangePasswordRequestSerializer(serializers.Serializer):
             send_normal_email(data)
         return super().validate(attrs)
 
+
 class SetNewPasswordSerializer(serializers.Serializer):
     password = serializers.CharField(max_length=100, min_length=6, write_only=True)
     confirm_password = serializers.CharField(max_length=100, min_length=6, write_only=True)
+
     class Meta:
         fields = ['password', 'confirm_password']
 
@@ -178,21 +180,28 @@ class SetNewPasswordSerializer(serializers.Serializer):
         if password != confirm_password:
             raise serializers.ValidationError('Passwords do not match')
 
+        # Collect all password validation errors
+        requirements_failed = []
+
         if len(password) < 8:
-            raise serializers.ValidationError('Password must be longer than 8 characters')
+            requirements_failed.append("at least 8 characters long")
+
         if password.isdigit():
-            raise serializers.ValidationError('Password cannot be entirely numeric')
+            requirements_failed.append("not be entirely numeric")
 
         if not re.search(r'\d', password):
-            raise serializers.ValidationError('Password must contain at least one number')
+            requirements_failed.append("contain at least one number")
 
         if not re.search(r'[A-Z]', password):
-            raise serializers.ValidationError('Password must contain at least one uppercase letter')
+            requirements_failed.append("contain at least one uppercase letter")
 
         if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
-            raise serializers.ValidationError('Password must contain at least one special character')
+            requirements_failed.append("contain at least one special character")
 
-
+        # If any requirements failed, raise a single error with all requirements
+        if requirements_failed:
+            error_message = "Password must: " + ", ".join(requirements_failed)
+            raise serializers.ValidationError(error_message)
 
         return attrs
 
@@ -217,22 +226,31 @@ class ChangePasswordSerializer(serializers.Serializer):
         if new_password == old_password:
             raise serializers.ValidationError('New password cannot be the same as the old password')
 
+        # Collect all password validation errors
+        requirements_failed = []
+
         if len(new_password) < 8:
-            raise serializers.ValidationError('Password must be longer than 8 characters')
+            requirements_failed.append("at least 8 characters long")
 
         if new_password.isdigit():
-            raise serializers.ValidationError('Password cannot be entirely numeric')
+            requirements_failed.append("not be entirely numeric")
 
         if not re.search(r'\d', new_password):
-            raise serializers.ValidationError('Password must contain at least one number')
+            requirements_failed.append("contain at least one number")
+
         if not re.search(r'[A-Z]', new_password):
-            raise serializers.ValidationError('Password must contain at least one uppercase letter')
+            requirements_failed.append("contain at least one uppercase letter")
 
         if not re.search(r'[!@#$%^&*(),.?":{}|<>]', new_password):
-            raise serializers.ValidationError('Password must contain at least one special character')
+            requirements_failed.append("contain at least one special character")
+
+        # If any requirements failed, raise a single error with all requirements
+        if requirements_failed:
+            error_message = "Password must: " + ", ".join(requirements_failed)
+            raise serializers.ValidationError(error_message)
 
         if not user.check_password(old_password):
-            raise serializers.ValidationError('Old password is incorrect')
+            raise serializers.ValidationError('Old password did not match our records')
 
         return attrs
 
