@@ -40,23 +40,28 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         if password != password2:
             raise serializers.ValidationError('Passwords do not match')
 
+        # Collect all password validation errors
+        requirements_failed = []
+
         if len(password) < 8:
-            raise serializers.ValidationError('Password must be longer than 8 characters')
+            requirements_failed.append("at least 8 characters long")
 
         if password.isdigit():
-            raise serializers.ValidationError('Password cannot be completely numeric')
+            requirements_failed.append("not be entirely numeric")
 
         if not re.search(r'\d', password):
-            raise serializers.ValidationError('Password must contain at least one number')
+            requirements_failed.append("contain at least one number")
 
         if not re.search(r'[A-Z]', password):
-            raise serializers.ValidationError('Password must contain at least one uppercase letter')
+            requirements_failed.append("contain at least one uppercase letter")
 
         if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
-            raise serializers.ValidationError('Password must contain at least one special character')
+            requirements_failed.append("contain at least one special character")
 
-
-
+        # If any requirements failed, raise a single error with all requirements
+        if requirements_failed:
+            error_message = "Password must: " + ", ".join(requirements_failed)
+            raise serializers.ValidationError(error_message)
 
         return attrs
 
