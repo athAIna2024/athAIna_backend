@@ -41,7 +41,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         if User.objects.filter(email=value).exists():
             user = User.objects.get(email=value)
             if user.status == 'inactive':
-                raise serializers.ValidationError('This account has been deactivated. Please contact support.')
+                raise serializers.ValidationError('This account has been deactivated. Please contact us')
             else:
                 raise serializers.ValidationError('user with this email address already exists.')
         return value
@@ -114,7 +114,7 @@ class LoginSerializer(serializers.ModelSerializer):
         try:
             user = User.objects.get(email=value)
             if user.status == 'inactive':
-                raise serializers.ValidationError('This account has been deactivated. Please contact support.')
+                raise serializers.ValidationError('This account has been deactivated. Please contact us.')
         except User.DoesNotExist:
             raise serializers.ValidationError('No user found with this email address')
 
