@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pathlib import Path
 import environ
 
@@ -21,7 +22,7 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["localhost","athaina.software","athaina.onrender"]
 
 # Application definition
 
@@ -35,15 +36,22 @@ INSTALLED_APPS = [
 
     'accountapp.apps.AccountappConfig',
     'flashcardapp.apps.FlashcardappConfig',
+    'testapp.apps.TestappConfig',
     'studysetapp.apps.StudysetappConfig',
     'reportapp.apps.ReportappConfig',
     'contactinquiryapp.apps.ContactinquiryappConfig',
+    'faqapp.apps.FaqappConfig',
 
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
+    'rest_framework_simplejwt.token_blacklist'
+
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -51,8 +59,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'accountapp.middleware.TokenFromCookieMiddleware',
+    'accountapp.middleware.InactiveUserMiddleware',
+    'accountapp.middleware.TokenExpiryMiddleware',
 
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'athAIna_backend.urls'
@@ -79,25 +89,48 @@ WSGI_APPLICATION = 'athAIna_backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': env('DB_ENGINE'),
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': env('DB_HOST'),
+        'PORT': env('DB_PORT'),
     }
 }
 
-# For now, we will not setup the database connection.
-# Since it is a development environment.
-# DATABASE = {
-#     'default': {
-#         'ENGINE': env('DB_ENGINE'),
-#         'NAME': env('DB_NAME'),
-#         'USER': env('DB_USER'),
-#         'PASSWORD': env('DB_PASSWORD'),
-#         'HOST': env('DB_HOST'),
-#         'PORT': env('DB_PORT'),
-#     }
-# }
+
+AUTH_USER_MODEL = 'accountapp.User'
+
+REST_FRAMEWORK = {
+
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIMS": "user_id",
+
+    "TOKEN_TYPE_CLAIMS": "token_type",
+    "JTI_CLAIM": "jti",
+}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -140,8 +173,54 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# MEDIA_URL = env("MEDIA_URL_LOCAL")
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media/'
+MEDIA_ROOT = BASE_DIR / env("MEDIA_ROOT_LOCAL")
 
 # CORS
-CORS_ORIGIN_WHITELIST = env.list('CORS_ORIGIN_WHITELIST', default=[])
+CORS_ALLOW_CREDENTIALS = True
+CORS_TRUSTED_ORIGINS = env('CORS_TRUSTED_ORIGINS', default=["http://localhost:5173"])
+CORS_ORIGIN_WHITELIST = env.list('CORS_ORIGIN_WHITELIST', default=["http://localhost:5173"])
+CSRF_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_HTTPONLY = False
+SESSION_COOKIE_HTTPONLY = True
+CORS_ALLOW_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
+CORS_ALLOW_HEADERS = ['accept', 'accept-encoding', 'authorization', 'content-type', 'origin', 'x-csrftoken']
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_AGE = 604800
+SESSION_COOKIE_NAME = 'athAIna_session'
+CSRF_COOKIE_NAME = 'athAIna_csrfToken'
+CSRF_COOKIE_AGE = 604800
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=["http://localhost:5173"])
+CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=["http://localhost:5173"])
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST=env('EMAIL_HOST')
+EMAIL_HOST_USER=env('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD=env('EMAIL_HOST_PASSWORD')
+EMAIL_PORT=env('EMAIL_PORT')
+EMAIL_USE_TLS=env('EMAIL_USE_TLS')
+
+CELERY_CONFIG = {
+    'CELERY_BROKER_URL': env('CELERY_BROKER_URL'),
+    'CELERY_RESULT_BACKEND': env('CELERY_RESULT_BACKEND'),
+    'CELERY_ACCEPT_CONTENT': env('CELERY_ACCEPT_CONTENT'),
+    'CELERY_TASK_SERIALIZER': env('CELERY_TASK_SERIALIZER'),
+    'CELERY_RESULT_SERIALIZER': env('CELERY_RESULT_SERIALIZER'),
+    'CELERY_TIMEZONE': env('CELERY_TIMEZONE'),
+    'CELERY_RESULT_EXPIRES': env('CELERY_RESULT_EXPIRES'),
+}
+
+CACHES = {
+    "default": {
+        "BACKEND": 'django_redis.cache.RedisCache',
+        "LOCATION": env('REDIS_URL'),
+        "OPTIONS": {
+            "CLIENT_CLASS": 'django_redis.client.DefaultClient',
+        }
+    }
+}
+

@@ -1,0 +1,70 @@
+docker-compose up -d --build
+- d means detached mode which is running the container in the background
+- --build means to build the container
+docker images
+- to check the images (containers)
+docker rmi <image_id>
+- to remove the image
+docker volume prune -f
+- to remove all unused volumes
+
+
+
+docker-compose restart
+- use when your CODE changes
+docker-compose build
+docker-compose up -d
+- when new dependencies are added
+docker-compose up -d
+- when you change .env file
+
+TO REMOVE ALL IMAGES AND VOLUMES:
+docker rmi $(docker images -aq)
+docker volume prune -f
+docker-compose down -v
+
+
+FOR MYSQL ISSUE (ACCESS DENIED, OPERATIONAL ERROR IN DJANGO):
+docker-compose stop mysql_db
+docker-compose run -d --name mysql_reset mysql_db --skip-grant-tables
+docker exec -it mysql_reset sh
+mysql -u root
+FLUSH PRIVILEGES;
+SHOW DATABASES;
+SELECT USER, HOST FROM mysql.user;
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'root';
+GRANT ALL PRIVILEGES ON athaina_db.* TO '<DB_USER>'@'%';
+FLUSH PRIVILEGES;
+exit
+exit
+docker stop mysql_reset
+docker rm mysql_reset
+docker-compose up -d mysql_db
+docker-compose restart phpmyadmin mysql_db
+
+TO SIGN IN WITH PHPMYADMIN
+- USER: DB_USER
+- PASSWORD: DB_PASSWORD
+
+
+
+TO REMOVE DOCKER IMAGES ALONG WITH ITS VOLUME
+docker-compose down -v
+
+docker exec -it <container_name> /bin/sh
+FOR PYTHON:
+python3 manage.py startapp <app_name>
+- through container (and allows you to create it locally)
+exit
+- to exit the container
+FOR MYSQL_DATABASE:
+
+mysql -u root -p
+- enter root password
+
+
+Under docker terminal seen in Docker Desktop, you can run the following commands:
+wmic logicaldisk get size,freespace,caption
+- to check disk space in Windows OS
+cleanmgr
+- to clean up disk space
